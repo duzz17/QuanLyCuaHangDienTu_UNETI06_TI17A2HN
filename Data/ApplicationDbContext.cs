@@ -24,7 +24,24 @@ public class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        // Khoa chinh
+        modelBuilder.Entity<KhachHang>()
+        .HasKey(k => k.MaKhachHang);
+
+        modelBuilder.Entity<TaiKhoan>()
+        .HasKey(t => t.MaTaiKhoan);
+
+        modelBuilder.Entity<LoaiSanPham>()
+        .HasKey(l => l.MaLoai);
+
+        modelBuilder.Entity<SanPham>()
+        .HasKey(s => s.MaSanPham);
+
+        modelBuilder.Entity<DonHang>()
+        .HasKey(d => d.MaDonHang);
+
+        modelBuilder.Entity<ChiTietDonHang>()
+        .HasKey(ct => ct.MaChiTiet);
 
         // KhachHang - DonHang: 1 - nhiều
         modelBuilder.Entity<DonHang>()
