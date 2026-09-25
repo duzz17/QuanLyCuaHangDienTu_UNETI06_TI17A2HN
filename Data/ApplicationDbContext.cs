@@ -83,6 +83,17 @@ public class ApplicationDbContext : DbContext
             .Property(s => s.Gia)
             .HasPrecision(18, 2);
 
+        modelBuilder.Entity<SanPham>()
+            .Property(s => s.TrangThai)
+            .HasDefaultValue(true);
+
+        modelBuilder.Entity<SanPham>()
+            .ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_SanPhams_Gia", "[Gia] > 0");
+                t.HasCheckConstraint("CK_SanPhams_SoLuong", "[SoLuong] >= 0");
+            });
+
         // Tổng tiền đơn hàng
         modelBuilder.Entity<DonHang>()
             .Property(d => d.TongTien)

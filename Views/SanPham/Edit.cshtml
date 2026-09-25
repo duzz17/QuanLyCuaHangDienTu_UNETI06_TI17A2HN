@@ -1,0 +1,56 @@
+@model SanPham
+
+@{
+    ViewData["Title"] = "Chỉnh sửa sản phẩm";
+}
+
+<h1 class="mb-4">Chỉnh sửa sản phẩm</h1>
+
+<div class="card">
+    <div class="card-body">
+        <form>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="TenSanPham" class="form-label">Tên sản phẩm</label>
+                    <input asp-for="TenSanPham" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="MaLoai" class="form-label">Loại sản phẩm</label>
+                    <select asp-for="MaLoai" asp-items="ViewBag.MaLoai" class="form-select">
+                        <option value="">Chọn loại sản phẩm</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label asp-for="MoTa" class="form-label">Mô tả</label>
+                    <textarea asp-for="MoTa" class="form-control" rows="4"></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Gia" class="form-label">Giá</label>
+                    <input asp-for="Gia" class="form-control" type="number" min="0.01" step="0.01" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="SoLuong" class="form-label">Số lượng</label>
+                    <input asp-for="SoLuong" class="form-control" type="number" min="0" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="HinhAnh" class="form-label">Đường dẫn hình ảnh</label>
+                    <input asp-for="HinhAnh" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="NgayNhap" class="form-label">Ngày nhập</label>
+                    <input asp-for="NgayNhap" class="form-control" type="date" />
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input asp-for="TrangThai" class="form-check-input" />
+                        <label asp-for="TrangThai" class="form-check-label">Đang kinh doanh</label>
+                    </div>
+                </div>
+                <div class="col-12 d-flex gap-2">
+                    <button type="button" class="btn btn-primary" disabled>Lưu thay đổi</button>
+                    <a asp-action="Details" asp-route-id="@Model.MaSanPham" class="btn btn-outline-secondary">Quay lại</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

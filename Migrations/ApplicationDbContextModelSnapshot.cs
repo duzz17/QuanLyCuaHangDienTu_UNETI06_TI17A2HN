@@ -175,11 +175,21 @@ namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("TrangThai")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.HasKey("MaSanPham");
 
                     b.HasIndex("MaLoai");
 
-                    b.ToTable("SanPhams");
+                    b.ToTable("SanPhams", t =>
+                        {
+                            t.HasCheckConstraint("CK_SanPhams_Gia", "[Gia] > 0");
+
+                            t.HasCheckConstraint("CK_SanPhams_SoLuong", "[SoLuong] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.TaiKhoan", b =>

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
 
 public class SanPham
@@ -8,9 +10,13 @@ public class SanPham
 
     public string MoTa { get; set; } = string.Empty;
 
+    [Range(typeof(decimal), "0.01", "9999999999999999.99")]
     public decimal Gia { get; set; }
 
+    [Range(0, int.MaxValue)]
     public int SoLuong { get; set; }
+
+    public bool TrangThai { get; set; } = true;
 
     public string HinhAnh { get; set; } = string.Empty;
 
