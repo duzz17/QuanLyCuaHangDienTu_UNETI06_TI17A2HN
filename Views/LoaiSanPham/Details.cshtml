@@ -1,0 +1,77 @@
+@*
+    Họ và tên: Nguyễn Xuân Đức
+    Mã sinh viên: 23103100062
+    Nội dung thực hiện: Giao diện chi tiết loại sản phẩm (Module 1 - Tuần 2: M1-09)
+*@
+@model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.LoaiSanPham
+@{
+    ViewData["Title"] = "Chi tiết loại sản phẩm";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-9 col-lg-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-info text-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 fw-bold">CHI TIẾT LOẠI SẢN PHẨM</h5>
+                <span class="badge bg-light text-dark">Mã #@Model.MaLoai</span>
+            </div>
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3 text-muted">Mã loại:</dt>
+                    <dd class="col-sm-9 fw-semibold">#@Model.MaLoai</dd>
+
+                    <dt class="col-sm-3 text-muted">Tên loại:</dt>
+                    <dd class="col-sm-9 fw-bold text-primary fs-5">@Model.TenLoai</dd>
+
+                    <dt class="col-sm-3 text-muted">Mô tả:</dt>
+                    <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.MoTa) ? "—" : Model.MoTa)</dd>
+
+                    <dt class="col-sm-3 text-muted">Số sản phẩm:</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge bg-secondary">
+                            @(Model.SanPhams?.Count ?? 0) sản phẩm đang thuộc loại này
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+            <div class="card-footer bg-light p-3 d-flex justify-content-end gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary px-3">Quay lại danh sách</a>
+                <a asp-action="Edit" asp-route-id="@Model.MaLoai" class="btn btn-warning px-3">Sửa thông tin</a>
+            </div>
+        </div>
+
+        @if (Model.SanPhams != null && Model.SanPhams.Any())
+        {
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light py-2">
+                    <h6 class="mb-0 fw-bold text-secondary">Danh sách sản phẩm thuộc loại "@Model.TenLoai"</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Mã SP</th>
+                                    <th>Tên sản phẩm</th>
+                                    <th class="text-end">Đơn giá</th>
+                                    <th class="text-center">Tồn kho</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var sp in Model.SanPhams)
+                                {
+                                    <tr>
+                                        <td>#@sp.MaSanPham</td>
+                                        <td>@sp.TenSanPham</td>
+                                        <td class="text-end">@sp.Gia.ToString("N0") đ</td>
+                                        <td class="text-center">@sp.SoLuong</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

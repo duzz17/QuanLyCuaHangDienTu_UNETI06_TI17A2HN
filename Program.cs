@@ -1,3 +1,7 @@
+// Họ và tên: Nguyễn Xuân Đức
+// Mã sinh viên: 23103100062
+// Nội dung thực hiện: Cấu hình kết nối SQL Server, đăng ký MVC, Session và pipeline HTTP (Module 1 - M1-02, M1-07)
+
 using Microsoft.EntityFrameworkCore;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 
@@ -8,6 +12,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
     ));
+
+// Cấu hình Session (M1-02, M1-07)
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// Hỗ trợ truy cập HttpContext trong View/Filter nếu cần
+builder.Services.AddHttpContextAccessor();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -23,6 +39,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+// Middleware Session phải đặt trước UseAuthorization (M1-07)
+app.UseSession();
 
 app.UseAuthorization();
 

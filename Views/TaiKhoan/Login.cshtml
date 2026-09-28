@@ -1,0 +1,54 @@
+@*
+    Họ và tên: Nguyễn Xuân Đức
+    Mã sinh viên: 23103100062
+    Nội dung thực hiện: Giao diện đăng nhập hệ thống, hiển thị Validation (Module 1 - Tuần 2: M1-06, M1-10)
+*@
+@model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-primary">ĐĂNG NHẬP</h3>
+                    <p class="text-muted small">Hệ thống quản lý cửa hàng điện tử - Nhóm 6</p>
+                </div>
+
+                <form asp-controller="TaiKhoan" asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="TenDangNhap" class="form-label fw-semibold"></label>
+                        <input asp-for="TenDangNhap" class="form-control" placeholder="Nhập tên đăng nhập..." autofocus />
+                        <span asp-validation-for="TenDangNhap" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="MatKhau" class="form-label fw-semibold"></label>
+                        <input asp-for="MatKhau" class="form-control" placeholder="Nhập mật khẩu..." />
+                        <span asp-validation-for="MatKhau" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        Đăng nhập
+                    </button>
+                </form>
+
+                <div class="mt-4 p-3 bg-light rounded small border">
+                    <div class="fw-bold text-secondary mb-1">Gợi ý tài khoản demo:</div>
+                    <div>• Quản trị viên: <code>admin</code> / <code>Admin@123</code></div>
+                    <div>• Khách hàng: theo dữ liệu trong bảng <code>TaiKhoan</code></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

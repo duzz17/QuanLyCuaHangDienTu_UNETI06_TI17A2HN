@@ -1,0 +1,64 @@
+@*
+    Họ và tên: Nguyễn Xuân Đức
+    Mã sinh viên: 23103100062
+    Nội dung thực hiện: Giao diện xóa loại sản phẩm, kiểm tra ràng buộc không cho xóa khi có sản phẩm (Module 1 - Tuần 2: M1-09, M1-10)
+*@
+@model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.LoaiSanPham
+@{
+    ViewData["Title"] = "Xóa loại sản phẩm";
+    bool dangCoSanPham = ViewBag.DangCoSanPham == true;
+    int soLuongSanPham = ViewBag.SoLuongSanPham ?? 0;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-danger text-white py-3">
+                <h5 class="card-title mb-0 fw-bold">XÁC NHẬN XÓA LOẠI SẢN PHẨM</h5>
+            </div>
+            <div class="card-body p-4">
+                @if (dangCoSanPham)
+                {
+                    <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                        <div>
+                            <strong>Cảnh báo an toàn dữ liệu:</strong>
+                            Hiện đang có <strong>@soLuongSanPham</strong> sản phẩm thuộc loại này.
+                            Theo quy định nghiệp vụ, hệ thống không cho phép xóa loại sản phẩm khi vẫn còn dữ liệu sản phẩm liên quan để tránh mất toàn vẹn dữ liệu.
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning mb-4" role="alert">
+                        Bạn có chắc chắn muốn xóa loại sản phẩm <strong>"@Model.TenLoai"</strong> khỏi hệ thống? Thao tác này không thể hoàn tác.
+                    </div>
+                }
+
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Mã loại:</dt>
+                    <dd class="col-sm-8 fw-semibold">#@Model.MaLoai</dd>
+
+                    <dt class="col-sm-4 text-muted">Tên loại:</dt>
+                    <dd class="col-sm-8 fw-bold text-danger">@Model.TenLoai</dd>
+
+                    <dt class="col-sm-4 text-muted">Mô tả:</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.MoTa) ? "—" : Model.MoTa)</dd>
+                </dl>
+
+                <form asp-action="Delete" method="post" class="mt-4">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="MaLoai" />
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">
+                            Hủy bỏ
+                        </a>
+                        <button type="submit" class="btn btn-danger px-4 fw-semibold" disabled="@dangCoSanPham">
+                            Xác nhận xóa
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
