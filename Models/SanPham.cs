@@ -1,4 +1,4 @@
-// Họ và tên: Phạm Văn Cường - MSSV: 23103100094
+// Họ và tên: Phạm Văn Cương - MSSV: 23103100094
 // Module 2: Quản lý và tra cứu sản phẩm
 using System.ComponentModel.DataAnnotations;
 
