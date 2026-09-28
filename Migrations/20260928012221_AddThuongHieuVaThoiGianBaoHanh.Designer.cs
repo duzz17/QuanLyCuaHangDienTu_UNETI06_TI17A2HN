@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 
@@ -11,9 +12,11 @@ using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260928012221_AddThuongHieuVaThoiGianBaoHanh")]
+    partial class AddThuongHieuVaThoiGianBaoHanh
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -198,8 +201,6 @@ namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Migrations
                             t.HasCheckConstraint("CK_SanPhams_Gia", "[Gia] > 0");
 
                             t.HasCheckConstraint("CK_SanPhams_SoLuong", "[SoLuong] >= 0");
-
-                            t.HasCheckConstraint("CK_SanPhams_ThoiGianBaoHanh", "[ThoiGianBaoHanh] >= 0");
                         });
                 });
 

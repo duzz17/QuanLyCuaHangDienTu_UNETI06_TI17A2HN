@@ -92,6 +92,7 @@ public class ApplicationDbContext : DbContext
             {
                 t.HasCheckConstraint("CK_SanPhams_Gia", "[Gia] > 0");
                 t.HasCheckConstraint("CK_SanPhams_SoLuong", "[SoLuong] >= 0");
+                t.HasCheckConstraint("CK_SanPhams_ThoiGianBaoHanh", "[ThoiGianBaoHanh] >= 0");
             });
 
         // Tổng tiền đơn hàng
