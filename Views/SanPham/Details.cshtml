@@ -1,64 +1,73 @@
-@model SanPham
+@model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.SanPham
 
 @{
     ViewData["Title"] = "Chi tiết sản phẩm";
 }
 
+<!-- Họ và tên: Phạm Văn Cường - MSSV: 23103100094 -->
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="mb-0">Chi tiết sản phẩm</h1>
+    <h2 class="mb-0 text-primary">Chi tiết sản phẩm</h2>
     <div>
         <a asp-action="Edit" asp-route-id="@Model.MaSanPham" class="btn btn-primary">Chỉnh sửa</a>
-        <a asp-action="Index" class="btn btn-outline-secondary">Quay lại</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Quay lại danh sách</a>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">Mã sản phẩm</dt>
-            <dd class="col-sm-9">@Model.MaSanPham</dd>
-
-            <dt class="col-sm-3">Tên sản phẩm</dt>
-            <dd class="col-sm-9">@Model.TenSanPham</dd>
-
-            <dt class="col-sm-3">Loại sản phẩm</dt>
-            <dd class="col-sm-9">@Model.LoaiSanPham?.TenLoai</dd>
-
-            <dt class="col-sm-3">Mô tả</dt>
-            <dd class="col-sm-9">@Model.MoTa</dd>
-
-            <dt class="col-sm-3">Giá</dt>
-            <dd class="col-sm-9">@Model.Gia.ToString("N0") ₫</dd>
-
-            <dt class="col-sm-3">Số lượng</dt>
-            <dd class="col-sm-9">@Model.SoLuong</dd>
-
-            <dt class="col-sm-3">Hình ảnh</dt>
-            <dd class="col-sm-9">
-                @if (string.IsNullOrWhiteSpace(Model.HinhAnh))
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <div class="row">
+            <div class="col-md-4 text-center mb-3">
+                @if (!string.IsNullOrWhiteSpace(Model.HinhAnh))
                 {
-                    <span>Chưa có hình ảnh</span>
+                    <img src="@Model.HinhAnh" alt="@Model.TenSanPham" class="img-fluid rounded border shadow-sm" style="max-height: 300px; object-fit: contain;" />
                 }
                 else
                 {
-                    <img src="@Model.HinhAnh" alt="@Model.TenSanPham" class="img-fluid rounded" style="max-height: 280px;" />
+                    <div class="p-5 bg-light rounded text-muted border">Không có hình ảnh</div>
                 }
-            </dd>
+            </div>
+            <div class="col-md-8">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Mã sản phẩm:</dt>
+                    <dd class="col-sm-8 fw-bold">#@Model.MaSanPham</dd>
 
-            <dt class="col-sm-3">Ngày nhập</dt>
-            <dd class="col-sm-9">@Model.NgayNhap.ToString("dd/MM/yyyy")</dd>
+                    <dt class="col-sm-4 text-muted">Tên sản phẩm:</dt>
+                    <dd class="col-sm-8 text-primary fw-bold fs-5">@Model.TenSanPham</dd>
 
-            <dt class="col-sm-3">Trạng thái</dt>
-            <dd class="col-sm-9">
-                @if (Model.TrangThai)
-                {
-                    <span class="badge bg-success">Đang kinh doanh</span>
-                }
-                else
-                {
-                    <span class="badge bg-secondary">Ngừng kinh doanh</span>
-                }
-            </dd>
-        </dl>
+                    <dt class="col-sm-4 text-muted">Thương hiệu:</dt>
+                    <dd class="col-sm-8"><span class="badge bg-secondary">@Model.ThuongHieu</span></dd>
+
+                    <dt class="col-sm-4 text-muted">Loại sản phẩm:</dt>
+                    <dd class="col-sm-8"><span class="badge bg-info text-dark">@Model.LoaiSanPham?.TenLoai</span></dd>
+
+                    <dt class="col-sm-4 text-muted">Đơn giá:</dt>
+                    <dd class="col-sm-8 text-danger fw-bold fs-5">@Model.Gia.ToString("N0") ₫</dd>
+
+                    <dt class="col-sm-4 text-muted">Số lượng trong kho:</dt>
+                    <dd class="col-sm-8">@Model.SoLuong</dd>
+
+                    <dt class="col-sm-4 text-muted">Thời gian bảo hành:</dt>
+                    <dd class="col-sm-8">@Model.ThoiGianBaoHanh tháng</dd>
+
+                    <dt class="col-sm-4 text-muted">Ngày nhập kho:</dt>
+                    <dd class="col-sm-8">@Model.NgayNhap.ToString("dd/MM/yyyy")</dd>
+
+                    <dt class="col-sm-4 text-muted">Trạng thái:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.TrangThai)
+                        {
+                            <span class="badge bg-success">Đang kinh doanh</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Ngừng kinh doanh</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4 text-muted">Mô tả sản phẩm:</dt>
+                    <dd class="col-sm-8">@Model.MoTa</dd>
+                </dl>
+            </div>
+        </div>
     </div>
 </div>

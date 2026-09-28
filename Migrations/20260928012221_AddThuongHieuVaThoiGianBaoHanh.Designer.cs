@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 
@@ -11,9 +12,11 @@ using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260928012221_AddThuongHieuVaThoiGianBaoHanh")]
+    partial class AddThuongHieuVaThoiGianBaoHanh
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
