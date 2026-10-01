@@ -191,6 +191,10 @@ else
                             </form>
                         </td>
                         <td class="text-center text-nowrap">
+                            @if (item.TrangThai && item.SoLuong > 0)
+                            {
+                                <a asp-controller="GioHang" asp-action="ThemVaoGio" asp-route-maSanPham="@item.MaSanPham" class="btn btn-sm btn-success" title="Thêm vào giỏ hàng">🛒 Thêm giỏ</a>
+                            }
                             <a asp-action="Details" asp-route-id="@item.MaSanPham" class="btn btn-sm btn-outline-info" title="Xem chi tiết">Chi tiết</a>
                             <a asp-action="Edit" asp-route-id="@item.MaSanPham" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">Sửa</a>
                             

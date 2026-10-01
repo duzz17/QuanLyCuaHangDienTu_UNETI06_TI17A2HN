@@ -1,0 +1,119 @@
+@model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.ViewModels.DatHangViewModel
+
+@{
+    ViewData["Title"] = "Thanh toán & Đặt hàng";
+}
+
+<div class="mb-4">
+    <h2 class="text-primary fw-bold mb-1">📝 Xác nhận Đặt hàng</h2>
+    <p class="text-muted mb-0">Vui lòng kiểm tra địa chỉ giao hàng và danh sách sản phẩm trước khi hoàn tất</p>
+</div>
+
+<form asp-action="DatHang" method="post">
+    <div class="row g-4">
+        <!-- Thông tin giao hàng -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold">🚚 Thông tin người nhận & Địa chỉ giao hàng</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="HoTen" class="form-label fw-bold">Họ và tên người nhận <span class="text-danger">*</span></label>
+                        <input asp-for="HoTen" class="form-control form-control-lg" placeholder="Nhập họ và tên người nhận hàng..." />
+                        <span asp-validation-for="HoTen" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="SoDienThoai" class="form-label fw-bold">Số điện thoại giao hàng <span class="text-danger">*</span></label>
+                            <input asp-for="SoDienThoai" class="form-control" placeholder="Ví dụ: 0912345678" />
+                            <span asp-validation-for="SoDienThoai" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label fw-bold">Email nhận hóa đơn</label>
+                            <input asp-for="Email" type="email" class="form-control" placeholder="nguyenvana@gmail.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="DiaChiGiaoHang" class="form-label fw-bold">Địa chỉ nhận hàng cụ thể <span class="text-danger">*</span></label>
+                        <textarea asp-for="DiaChiGiaoHang" class="form-control" rows="3" placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố..."></textarea>
+                        <span asp-validation-for="DiaChiGiaoHang" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="GhiChu" class="form-label fw-bold">Ghi chú cho người giao (không bắt buộc)</label>
+                        <textarea asp-for="GhiChu" class="form-control" rows="2" placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi giao 15 phút..."></textarea>
+                        <span asp-validation-for="GhiChu" class="text-danger small"></span>
+                    </div>
+
+                    <div class="p-3 bg-light rounded border text-secondary small">
+                        💳 <strong>Hình thức thanh toán:</strong> Thanh toán khi nhận hàng (COD). Quý khách kiểm tra hàng trước khi thanh toán.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tóm tắt đơn hàng -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0 fw-bold">📦 Đơn hàng của bạn (@Model.GioHang.TongSoLuong sản phẩm)</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        @foreach (var item in Model.GioHang.Items)
+                        {
+                            <li class="list-group-item p-3 d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-3">
+                                    @if (!string.IsNullOrWhiteSpace(item.HinhAnh))
+                                    {
+                                        <img src="@item.HinhAnh" alt="@item.TenSanPham" style="width: 50px; height: 50px; object-fit: cover;" class="rounded border" />
+                                    }
+                                    <div>
+                                        <strong class="text-dark d-block text-truncate" style="max-width: 180px;">@item.TenSanPham</strong>
+                                        <small class="text-muted">SL: x@item.SoLuong | @item.Gia.ToString("N0") ₫</small>
+                                    </div>
+                                </div>
+                                <span class="fw-bold text-danger">@item.ThanhTien.ToString("N0") ₫</span>
+                            </li>
+                        }
+                    </ul>
+
+                    <div class="p-4 bg-light">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Tạm tính:</span>
+                            <span class="fw-bold">@Model.GioHang.TongTien.ToString("N0") ₫</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="text-muted">Phí vận chuyển:</span>
+                            <span class="badge bg-success">Miễn phí</span>
+                        </div>
+
+                        <hr />
+
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <span class="fs-5 fw-bold text-dark">TỔNG THANH TOÁN:</span>
+                            <span class="fs-4 fw-bold text-danger">@Model.GioHang.TongTien.ToString("N0") ₫</span>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow">
+                            ✅ HOÀN TẤT ĐẶT HÀNG
+                        </button>
+                        <a asp-controller="GioHang" asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">
+                            ← Quay lại giỏ hàng
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

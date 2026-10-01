@@ -31,22 +31,39 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="SanPham" asp-action="Index">Sản phẩm</a>
                         </li>
-                        @* M1-08: Menu Quản trị chỉ hiển thị khi đã đăng nhập vai trò Admin *@
+                        @if (!string.IsNullOrEmpty(Context.Session.GetString("VaiTro")))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="DonHang" asp-action="Index">Đơn hàng của tôi</a>
+                            </li>
+                        }
+                        @* Menu Quản trị hiển thị khi đã đăng nhập vai trò Admin *@
                         @if (Context.Session.GetString("VaiTro") == "Admin")
                         {
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-dark fw-semibold" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Quản trị
+                                    Quản trị hệ thống
                                 </a>
                                 <ul class="dropdown-menu shadow-sm" aria-labelledby="adminMenu">
                                     <li>
                                         <a class="dropdown-item" asp-area="" asp-controller="LoaiSanPham" asp-action="Index">
-                                            Quản lý loại sản phẩm
+                                            🏷️ Quản lý loại sản phẩm
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" asp-area="" asp-controller="SanPham" asp-action="Index">
-                                            Quản lý sản phẩm
+                                            💻 Quản lý sản phẩm
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" asp-area="" asp-controller="KhachHang" asp-action="Index">
+                                            👥 Quản lý khách hàng
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-area="" asp-controller="DonHang" asp-action="Index">
+                                            📦 Quản lý đơn hàng
                                         </a>
                                     </li>
                                 </ul>
@@ -54,8 +71,30 @@
                         }
                     </ul>
 
-                    @* M1-07: Hiển thị trạng thái đăng nhập, họ tên người dùng và vai trò từ Session *@
+                    @{
+                        int cartCount = 0;
+                        var cartJson = Context.Session.GetString("GIO_HANG_SESSION");
+                        if (!string.IsNullOrEmpty(cartJson))
+                        {
+                            try {
+                                var cartItems = System.Text.Json.JsonSerializer.Deserialize<List<QuanLyCuaHangDienTu_UNETI06_TI17A2HN.ViewModels.CartItemViewModel>>(cartJson);
+                                cartCount = cartItems?.Sum(i => i.SoLuong) ?? 0;
+                            } catch {}
+                        }
+                    }
+
                     <ul class="navbar-nav ms-auto align-items-center">
+                        <li class="nav-item me-3">
+                            <a class="btn btn-outline-success position-relative btn-sm px-3" asp-controller="GioHang" asp-action="Index">
+                                🛒 Giỏ hàng
+                                @if (cartCount > 0)
+                                {
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        @cartCount
+                                    </span>
+                                }
+                            </a>
+                        </li>
                         @if (!string.IsNullOrEmpty(Context.Session.GetString("VaiTro")))
                         {
                             <li class="nav-item me-3 text-secondary small">
