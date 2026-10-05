@@ -17,14 +17,16 @@ public class SanPhamController : Controller
 
     [HttpGet]
     public async Task<IActionResult> Index(
-    string? tuKhoa,         // M2-07: Tìm kiếm theo tên hoặc thương hiệu
-    int? maLoai,            // M2-08: Lọc theo loại sản phẩm
-    string? thuongHieu,     // M2-08: Lọc theo thương hiệu
-    bool? trangThai,        // M2-08: Lọc theo trạng thái
-    decimal? giaTu,         // M2-08: Khoảng giá từ
-    decimal? giaDen,        // M2-08: Khoảng giá đến
-    string? sapXep          // M2-09: Sắp xếp
-)
+        string? tuKhoa,         // M2-07: Tìm kiếm theo tên hoặc thương hiệu
+        int? maLoai,            // M2-08: Lọc theo loại sản phẩm
+        string? thuongHieu,     // M2-08: Lọc theo thương hiệu
+        bool? trangThai,        // M2-08: Lọc theo trạng thái
+        decimal? giaTu,         // M2-08: Khoảng giá từ
+        decimal? giaDen,        // M2-08: Khoảng giá đến
+        string? sapXep,         // M2-09: Sắp xếp
+        int page = 1,           // M2-10: Trang hiện tại (mặc định trang 1)
+        int pageSize = 6        // M2-10: Số sản phẩm mỗi trang (mặc định 6)
+    )
     {
         IQueryable<SanPham> query = _context.SanPhams
             .AsNoTracking()
@@ -75,6 +77,21 @@ public class SanPhamController : Controller
             _ => query.OrderBy(s => s.TenSanPham) // Mặc định: Tên A - Z
         };
 
+        // M2-10: Tính toán phân trang EF Core
+        var totalItems = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+        if (totalPages < 1) totalPages = 1;
+
+        // M2-11: Xử lý an toàn số trang (trang đầu / trang cuối)
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        // M2-10: Phân trang tại truy vấn EF Core bằng Skip và Take
+        var sanPhams = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
         // Chuẩn bị dữ liệu danh mục & thương hiệu cho Form lọc
         ViewBag.MaLoaiList = await CreateLoaiSanPhamSelectListAsync(maLoai);
         ViewBag.ThuongHieuList = await _context.SanPhams
@@ -83,7 +100,7 @@ public class SanPhamController : Controller
             .Distinct()
             .ToListAsync();
 
-        // Giữ lại các giá trị lọc trên giao diện
+        // M2-11: Giữ lại toàn bộ điều kiện lọc, tìm kiếm, sắp xếp
         ViewBag.CurrentTuKhoa = tuKhoa;
         ViewBag.CurrentMaLoai = maLoai;
         ViewBag.CurrentThuongHieu = thuongHieu;
@@ -92,7 +109,14 @@ public class SanPhamController : Controller
         ViewBag.CurrentGiaDen = giaDen;
         ViewBag.CurrentSapXep = sapXep;
 
-        var sanPhams = await query.ToListAsync();
+        // M2-10: Dữ liệu phân trang gửi sang View
+        ViewBag.CurrentPage = page;
+        ViewBag.TotalPages = totalPages;
+        ViewBag.PageSize = pageSize;
+        ViewBag.TotalItems = totalItems;
+        ViewBag.HasPreviousPage = page > 1;
+        ViewBag.HasNextPage = page < totalPages;
+
         return View(sanPhams);
     }
 

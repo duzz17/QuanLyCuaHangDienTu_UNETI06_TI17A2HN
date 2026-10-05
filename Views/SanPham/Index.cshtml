@@ -106,6 +106,7 @@
 
                 <!-- Nút thao tác lọc -->
                 <div class="col-12 d-flex gap-2">
+                    <input type="hidden" name="page" value="1" />
                     <button type="submit" class="btn btn-primary px-4">
                         🔍 Tìm kiếm & Lọc
                     </button>
@@ -207,5 +208,103 @@ else
                 }
             </tbody>
         </table>
+    </div>
+
+    <!-- M2-10: THANH ĐIỀU HƯỚNG PHÂN TRANG (PAGINATION) -->
+    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+        <div class="text-muted small">
+            Hiển thị trang <strong>@ViewBag.CurrentPage</strong> / <strong>@ViewBag.TotalPages</strong> 
+            (Tổng cộng <strong>@ViewBag.TotalItems</strong> sản phẩm)
+        </div>
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            <nav aria-label="Phân trang danh sách sản phẩm">
+                <ul class="pagination pagination-sm mb-0">
+                    <!-- Nút Về trang đầu -->
+                    <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-page="1"
+                           asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
+                           asp-route-maLoai="@ViewBag.CurrentMaLoai"
+                           asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
+                           asp-route-trangThai="@ViewBag.CurrentTrangThai"
+                           asp-route-giaTu="@ViewBag.CurrentGiaTu"
+                           asp-route-giaDen="@ViewBag.CurrentGiaDen"
+                           asp-route-sapXep="@ViewBag.CurrentSapXep"
+                           asp-route-pageSize="@ViewBag.PageSize">
+                            &laquo; Đầu
+                        </a>
+                    </li>
+
+                    <!-- Nút Trang trước -->
+                    <li class="page-item @(ViewBag.HasPreviousPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-page="@(ViewBag.CurrentPage - 1)"
+                           asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
+                           asp-route-maLoai="@ViewBag.CurrentMaLoai"
+                           asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
+                           asp-route-trangThai="@ViewBag.CurrentTrangThai"
+                           asp-route-giaTu="@ViewBag.CurrentGiaTu"
+                           asp-route-giaDen="@ViewBag.CurrentGiaDen"
+                           asp-route-sapXep="@ViewBag.CurrentSapXep"
+                           asp-route-pageSize="@ViewBag.PageSize">
+                            &lsaquo; Trước
+                        </a>
+                    </li>
+
+                    <!-- Các nút số trang -->
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                            <a class="page-link" asp-action="Index"
+                               asp-route-page="@i"
+                               asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
+                               asp-route-maLoai="@ViewBag.CurrentMaLoai"
+                               asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
+                               asp-route-trangThai="@ViewBag.CurrentTrangThai"
+                               asp-route-giaTu="@ViewBag.CurrentGiaTu"
+                               asp-route-giaDen="@ViewBag.CurrentGiaDen"
+                               asp-route-sapXep="@ViewBag.CurrentSapXep"
+                               asp-route-pageSize="@ViewBag.PageSize">
+                                @i
+                            </a>
+                        </li>
+                    }
+
+                    <!-- Nút Trang sau -->
+                    <li class="page-item @(ViewBag.HasNextPage ? "" : "disabled")">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-page="@(ViewBag.CurrentPage + 1)"
+                           asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
+                           asp-route-maLoai="@ViewBag.CurrentMaLoai"
+                           asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
+                           asp-route-trangThai="@ViewBag.CurrentTrangThai"
+                           asp-route-giaTu="@ViewBag.CurrentGiaTu"
+                           asp-route-giaDen="@ViewBag.CurrentGiaDen"
+                           asp-route-sapXep="@ViewBag.CurrentSapXep"
+                           asp-route-pageSize="@ViewBag.PageSize">
+                            Sau &rsaquo;
+                        </a>
+                    </li>
+
+                    <!-- Nút Đến trang cuối -->
+                    <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-page="@ViewBag.TotalPages"
+                           asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
+                           asp-route-maLoai="@ViewBag.CurrentMaLoai"
+                           asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
+                           asp-route-trangThai="@ViewBag.CurrentTrangThai"
+                           asp-route-giaTu="@ViewBag.CurrentGiaTu"
+                           asp-route-giaDen="@ViewBag.CurrentGiaDen"
+                           asp-route-sapXep="@ViewBag.CurrentSapXep"
+                           asp-route-pageSize="@ViewBag.PageSize">
+                            Cuối &raquo;
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
     </div>
 }
