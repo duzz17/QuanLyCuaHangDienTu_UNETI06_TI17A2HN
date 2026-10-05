@@ -109,11 +109,13 @@ public class SanPhamController : Controller
         ViewBag.CurrentGiaDen = giaDen;
         ViewBag.CurrentSapXep = sapXep;
 
-        // M2-10: Dữ liệu phân trang gửi sang View
+        // M2-10 & M2-11: Dữ liệu phân trang gửi sang View
         ViewBag.CurrentPage = page;
         ViewBag.TotalPages = totalPages;
         ViewBag.PageSize = pageSize;
         ViewBag.TotalItems = totalItems;
+        ViewBag.FromItem = totalItems == 0 ? 0 : (page - 1) * pageSize + 1;
+        ViewBag.ToItem = Math.Min(page * pageSize, totalItems);
         ViewBag.HasPreviousPage = page > 1;
         ViewBag.HasNextPage = page < totalPages;
 
