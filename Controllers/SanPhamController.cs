@@ -187,6 +187,24 @@ public class SanPhamController : Controller
         // Loại bỏ validation đối với navigation property
         ModelState.Remove(nameof(sanPham.LoaiSanPham));
 
+        // M2-06 & M2-12: Kiểm tra các quy tắc nghiệp vụ và thông báo lỗi Validation tiếng Việt
+        if (sanPham.Gia <= 0)
+        {
+            ModelState.AddModelError(nameof(sanPham.Gia), "Đơn giá sản phẩm phải lớn hơn 0 ₫.");
+        }
+        if (sanPham.SoLuong < 0)
+        {
+            ModelState.AddModelError(nameof(sanPham.SoLuong), "Số lượng tồn kho phải lớn hơn hoặc bằng 0.");
+        }
+        if (sanPham.ThoiGianBaoHanh < 0)
+        {
+            ModelState.AddModelError(nameof(sanPham.ThoiGianBaoHanh), "Thời gian bảo hành phải lớn hơn hoặc bằng 0 tháng.");
+        }
+        if (sanPham.MaLoai <= 0)
+        {
+            ModelState.AddModelError(nameof(sanPham.MaLoai), "Vui lòng chọn loại sản phẩm hợp lệ.");
+        }
+
         if (ModelState.IsValid)
         {
             _context.SanPhams.Add(sanPham);
@@ -198,6 +216,7 @@ public class SanPhamController : Controller
         ViewData["MaLoai"] = await CreateLoaiSanPhamSelectListAsync(sanPham.MaLoai);
         return View(sanPham);
     }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, SanPham sanPham)
@@ -208,6 +227,24 @@ public class SanPhamController : Controller
         }
 
         ModelState.Remove(nameof(sanPham.LoaiSanPham));
+
+        // M2-06 & M2-12: Kiểm tra các quy tắc nghiệp vụ và thông báo lỗi Validation tiếng Việt
+        if (sanPham.Gia <= 0)
+        {
+            ModelState.AddModelError(nameof(sanPham.Gia), "Đơn giá sản phẩm phải lớn hơn 0 ₫.");
+        }
+        if (sanPham.SoLuong < 0)
+        {
+            ModelState.AddModelError(nameof(sanPham.SoLuong), "Số lượng tồn kho phải lớn hơn hoặc bằng 0.");
+        }
+        if (sanPham.ThoiGianBaoHanh < 0)
+        {
+            ModelState.AddModelError(nameof(sanPham.ThoiGianBaoHanh), "Thời gian bảo hành phải lớn hơn hoặc bằng 0 tháng.");
+        }
+        if (sanPham.MaLoai <= 0)
+        {
+            ModelState.AddModelError(nameof(sanPham.MaLoai), "Vui lòng chọn loại sản phẩm hợp lệ.");
+        }
 
         if (ModelState.IsValid)
         {
