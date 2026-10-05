@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
+using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Filters;
 
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Controllers;
 
@@ -28,9 +29,16 @@ public class SanPhamController : Controller
         int pageSize = 6        // M2-10: Số sản phẩm mỗi trang (mặc định 6)
     )
     {
+        pageSize = Math.Clamp(pageSize, 1, 48);
+        var isManagement = HttpContext.Session.GetString("VaiTro") == "Admin"
+            && HttpContext.Request.Query["view"] != "store";
+        ViewData["Storefront"] = !isManagement;
         IQueryable<SanPham> query = _context.SanPhams
             .AsNoTracking()
             .Include(s => s.LoaiSanPham);
+
+        if (!isManagement)
+            query = query.Where(s => s.TrangThai);
 
         // M2-07: Tìm kiếm theo tên hoặc thương hiệu
         if (!string.IsNullOrWhiteSpace(tuKhoa))
@@ -144,6 +152,7 @@ public class SanPhamController : Controller
     }
 
     [HttpGet]
+    [AdminOnly]
     public async Task<IActionResult> Create()
     {
         ViewData["MaLoai"] = await CreateLoaiSanPhamSelectListAsync();
@@ -151,6 +160,7 @@ public class SanPhamController : Controller
     }
 
     [HttpGet]
+    [AdminOnly]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id is null)
@@ -181,6 +191,7 @@ public class SanPhamController : Controller
     }
 
     [HttpPost]
+    [AdminOnly]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(SanPham sanPham)
     {
@@ -218,6 +229,7 @@ public class SanPhamController : Controller
     }
 
     [HttpPost]
+    [AdminOnly]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, SanPham sanPham)
     {
@@ -267,6 +279,7 @@ public class SanPhamController : Controller
         return View(sanPham);
     }
     [HttpPost]
+    [AdminOnly]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DoiTrangThai(int id)
     {
@@ -279,6 +292,7 @@ public class SanPhamController : Controller
         return RedirectToAction(nameof(Index));
     }
     [HttpPost]
+    [AdminOnly]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {

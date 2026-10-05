@@ -1,209 +1,86 @@
-@model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.SanPham
-
+@model SanPham
+@using System.Globalization
 @{
-    ViewData["Title"] = Model.TenSanPham + " - Chi tiết sản phẩm";
+    var management = Context.Session.GetString("VaiTro") == "Admin" && Context.Request.Query["view"] != "store";
+    ViewData["Title"] = Model.TenSanPham;
+    ViewData["Storefront"] = !management;
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    var available = Model.TrangThai && Model.SoLuong > 0;
 }
-
-<!-- Họ và tên: Phạm Văn Cường - MSSV: 23103100094 -->
-<!-- Module 2: M2-12 - Hoàn thiện chi tiết sản phẩm phía khách hàng và định dạng tiền -->
-
-<!-- BREADCRUMB ĐIỀU HƯỚNG -->
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb py-2 px-3 bg-light rounded shadow-sm">
-        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Trang chủ</a></li>
-        <li class="breadcrumb-item"><a asp-controller="SanPham" asp-action="Index" class="text-decoration-none">Sản phẩm</a></li>
-        @if (Model.LoaiSanPham != null)
-        {
-            <li class="breadcrumb-item"><a asp-controller="SanPham" asp-action="Index" asp-route-maLoai="@Model.MaLoai" class="text-decoration-none">@Model.LoaiSanPham.TenLoai</a></li>
-        }
-        <li class="breadcrumb-item active text-truncate" style="max-width: 300px;" aria-current="page">@Model.TenSanPham</li>
-    </ol>
+<nav class="simple-breadcrumb" aria-label="Đường dẫn">
+<a asp-controller="Home" asp-action="Index" asp-route-view="@(management ? "admin" : "store")">Trang chủ</a>
+<span>/</span>
+<a asp-action="Index" asp-route-view="@(management ? "admin" : "store")">Sản phẩm</a>
+<span>/</span>
+<span>@Model.LoaiSanPham?.TenLoai</span>
 </nav>
-
-<div class="row g-4 mb-4">
-    <!-- CỘT TRÁI: HÌNH ẢNH SẢN PHẨM -->
-    <div class="col-lg-5">
-        <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-white text-center d-flex justify-content-center align-items-center">
-            @if (!string.IsNullOrWhiteSpace(Model.HinhAnh))
-            {
-                <img src="@Model.HinhAnh" alt="@Model.TenSanPham" class="img-fluid rounded-3" style="max-height: 400px; width: 100%; object-fit: contain;" />
-            }
-            else
-            {
-                <div class="py-5 my-5 text-muted">
-                    <div class="display-1">📱</div>
-                    <p class="mt-2 text-secondary">Chưa có hình ảnh sản phẩm</p>
-                </div>
-            }
-        </div>
-    </div>
-
-    <!-- CỘT PHẢI: THÔNG TIN CHI TIẾT VÀ ĐẶT HÀNG (PHÍA KHÁCH HÀNG) -->
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm rounded-3 p-4 bg-white h-100">
-            <!-- Tên sản phẩm & Mã -->
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <span class="badge bg-primary px-3 py-2 fs-6">@Model.ThuongHieu</span>
-                <span class="text-muted small">Mã SP: #@Model.MaSanPham</span>
-            </div>
-            
-            <h2 class="fw-bold text-dark mb-2">@Model.TenSanPham</h2>
-
-            <!-- Đánh giá & Danh mục -->
-            <div class="d-flex flex-wrap align-items-center gap-3 text-muted small mb-3 pb-3 border-bottom">
-                <div>
-                    <span class="text-warning">★★★★★</span>
-                    <span class="ms-1">(5.0 đánh giá)</span>
-                </div>
-                <div>|</div>
-                <div>Loại: <strong class="text-dark">@(Model.LoaiSanPham?.TenLoai ?? "Điện tử")</strong></div>
-                <div>|</div>
-                <div>Bảo hành: <strong class="text-dark">@Model.ThoiGianBaoHanh tháng</strong></div>
-            </div>
-
-            <!-- M2-12: KHỐI GIÁ TIỀN NỔI BẬT & ĐỊNH DẠNG TIỀN TỆ VNĐ -->
-            <div class="p-3 bg-light rounded-3 mb-4 border">
-                <div class="d-flex align-items-baseline gap-2">
-                    <span class="fs-1 fw-bold text-danger">@Model.Gia.ToString("N0") ₫</span>
-                    <span class="text-muted small">(Đã bao gồm 10% VAT)</span>
-                </div>
-                <div class="text-success small mt-1">
-                    ✓ Miễn phí giao hàng toàn quốc cho đơn từ 500.000 ₫
-                </div>
-            </div>
-
-            <!-- THÔNG TIN TỒN KHO & TÌNH TRẠNG -->
-            <div class="mb-4">
-                <div class="row g-2 small">
-                    <div class="col-sm-6">
-                        <span class="text-muted">Tình trạng:</span>
-                        @if (Model.TrangThai && Model.SoLuong > 0)
-                        {
-                            <span class="badge bg-success ms-1">✓ Còn hàng (@Model.SoLuong sản phẩm)</span>
-                        }
-                        else if (Model.TrangThai && Model.SoLuong <= 0)
-                        {
-                            <span class="badge bg-warning text-dark ms-1">Tạm hết hàng</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary ms-1">Ngừng kinh doanh</span>
-                        }
-                    </div>
-                    <div class="col-sm-6">
-                        <span class="text-muted">Chính sách:</span>
-                        <span class="text-dark fw-semibold ms-1">Đổi mới 30 ngày nếu lỗi</span>
-                    </div>
-                    <div class="col-sm-6">
-                        <span class="text-muted">Thời gian bảo hành:</span>
-                        <span class="text-dark fw-semibold ms-1">@Model.ThoiGianBaoHanh tháng chính hãng</span>
-                    </div>
-                    <div class="col-sm-6">
-                        <span class="text-muted">Cập nhật kho:</span>
-                        <span class="text-dark fw-semibold ms-1">@Model.NgayNhap.ToString("dd/MM/yyyy")</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- FORM ĐẶT HÀNG PHÍA KHÁCH HÀNG (M2-12) -->
-            @if (Model.TrangThai && Model.SoLuong > 0)
-            {
-                <form asp-controller="GioHang" asp-action="ThemVaoGio" method="post" class="mt-auto pt-3 border-top">
-                    <input type="hidden" name="maSanPham" value="@Model.MaSanPham" />
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <label class="fw-bold text-secondary mb-0">Số lượng:</label>
-                        <div class="input-group" style="width: 130px;">
-                            <input type="number" name="soLuong" value="1" min="1" max="@Model.SoLuong" class="form-control text-center fw-bold" />
-                        </div>
-                        <span class="text-muted small">(Tối đa @Model.SoLuong sản phẩm có sẵn)</span>
-                    </div>
-
-                    <div class="d-flex gap-2 flex-wrap">
-                        <button type="submit" class="btn btn-success btn-lg px-4 flex-grow-1 shadow-sm">
-                            🛒 Thêm vào giỏ hàng
-                        </button>
-                        <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-3">
-                            ← Quay lại
-                        </a>
-                        @if (Context.Session.GetString("VaiTro") == "Admin")
-                        {
-                            <a asp-action="Edit" asp-route-id="@Model.MaSanPham" class="btn btn-outline-primary btn-lg px-3">
-                                ✏️ Sửa SP
-                            </a>
-                        }
-                    </div>
-                </form>
-            }
-            else
-            {
-                <div class="mt-auto pt-3 border-top">
-                    <div class="alert alert-warning mb-3">
-                        @(Model.TrangThai ? "Sản phẩm hiện tại đang tạm hết hàng. Quý khách vui lòng quay lại sau!" : "Sản phẩm này hiện đã ngừng kinh doanh.")
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a asp-action="Index" class="btn btn-outline-secondary px-4">
-                            ← Quay lại danh sách sản phẩm
-                        </a>
-                        @if (Context.Session.GetString("VaiTro") == "Admin")
-                        {
-                            <a asp-action="Edit" asp-route-id="@Model.MaSanPham" class="btn btn-outline-primary px-3">
-                                ✏️ Sửa sản phẩm
-                            </a>
-                        }
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
+<div class="product-detail-layout">
+    <div class="detail-gallery">
+<span class="detail-brand">@Model.ThuongHieu</span>
+<img src="@(string.IsNullOrWhiteSpace(Model.HinhAnh) ? Url.Content("~/images/product-placeholder.svg") : Model.HinhAnh)" alt="@Model.TenSanPham" data-product-image/>
+<div class="gallery-caption">Hình ảnh sản phẩm · #SP@(Model.MaSanPham.ToString("D4"))</div>
 </div>
-
-<!-- KHỐI MÔ TẢ CHI TIẾT SẢN PHẨM & CHÍNH SÁCH -->
-<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
-    <div class="card-header bg-white border-bottom py-3">
-        <ul class="nav nav-tabs card-header-tabs" role="tablist">
-            <li class="nav-item">
-                <button class="nav-link active fw-bold text-primary" data-bs-toggle="tab" data-bs-target="#tab-mota" type="button" role="tab">
-                    📝 Mô tả chi tiết sản phẩm
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link fw-semibold text-secondary" data-bs-toggle="tab" data-bs-target="#tab-chinhsach" type="button" role="tab">
-                    🛡️ Chính sách bảo hành & Đổi trả
-                </button>
-            </li>
-        </ul>
-    </div>
-    <div class="card-body p-4 tab-content">
-        <!-- Tab Mô tả -->
-        <div class="tab-pane fade show active" id="tab-mota" role="tabpanel">
-            @if (!string.IsNullOrWhiteSpace(Model.MoTa))
-            {
-                <div class="text-dark lh-lg" style="white-space: pre-line;">
-                    @Model.MoTa
-                </div>
-            }
-            else
-            {
-                <p class="text-muted fst-italic">Chưa có thông tin mô tả chi tiết cho sản phẩm này.</p>
-            }
-        </div>
-
-        <!-- Tab Chính sách -->
-        <div class="tab-pane fade" id="tab-chinhsach" role="tabpanel">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="p-3 border rounded bg-light">
-                        <h6 class="fw-bold text-success mb-2">✓ Bảo hành chính hãng @Model.ThoiGianBaoHanh tháng</h6>
-                        <p class="small text-muted mb-0">Áp dụng bảo hành điện tử chính hãng từ ngày kích hoạt tại tất cả trung tâm bảo hành của @Model.ThuongHieu.</p>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="p-3 border rounded bg-light">
-                        <h6 class="fw-bold text-primary mb-2">✓ Đổi mới trong 30 ngày</h6>
-                        <p class="small text-muted mb-0">Hỗ trợ 1 đổi 1 ngay lập tức nếu sản phẩm xuất hiện lỗi kỹ thuật từ phía nhà sản xuất.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <section class="detail-info">
+<span class="eyebrow">@(Model.LoaiSanPham?.TenLoai ?? "THIẾT BỊ ĐIỆN TỬ")</span>
+<h1>@Model.TenSanPham</h1>
+<div class="detail-stock">
+<span class="status-badge @(available ? "completed" : "neutral")">
+<span>
+</span>@(!Model.TrangThai ? "Ngừng kinh doanh" : Model.SoLuong <= 0 ? "Tạm hết hàng" : "Còn hàng")</span>@if (available) { <span class="text-muted">Còn @Model.SoLuong sản phẩm</span> }</div>
+<div class="detail-price">
+<small>Giá bán</small>
+<strong>@Model.Gia.ToString("N0", vi) <span>₫</span>
+</strong>
+</div>
+        <p class="detail-description">@(string.IsNullOrWhiteSpace(Model.MoTa) ? "Thông tin chi tiết đang được cập nhật." : Model.MoTa)</p>
+        <dl class="product-specs">
+<div>
+<dt>Thương hiệu</dt>
+<dd>@Model.ThuongHieu</dd>
+</div>
+<div>
+<dt>Danh mục</dt>
+<dd>@Model.LoaiSanPham?.TenLoai</dd>
+</div>
+<div>
+<dt>Bảo hành</dt>
+<dd>@Model.ThoiGianBaoHanh tháng</dd>
+</div>
+</dl>
+        @if (available)
+        {
+            <form asp-controller="GioHang" asp-action="ThemVaoGio" method="post" class="purchase-form">
+<input type="hidden" name="maSanPham" value="@Model.MaSanPham"/>
+<label for="purchase-quantity">Số lượng</label>
+<div class="purchase-actions">
+<div class="quantity-stepper">
+<button type="button" data-quantity-step="-1" aria-label="Giảm số lượng">−</button>
+<input id="purchase-quantity" type="number" name="soLuong" value="1" min="1" max="@Model.SoLuong" aria-label="Số lượng sản phẩm"/>
+<button type="button" data-quantity-step="1" aria-label="Tăng số lượng">+</button>
+</div>
+<button type="submit" class="btn btn-primary">
+<svg class="icon">
+<use href="#i-cart"/>
+</svg> Thêm vào giỏ hàng</button>
+</div>
+</form>
+        }
+        else { <div class="availability-note">
+<svg class="icon">
+<use href="#i-alert"/>
+</svg> Sản phẩm hiện chưa thể đặt mua. Hãy khám phá các sản phẩm khác trong cửa hàng.</div> }
+        <div class="detail-service">
+<svg class="icon">
+<use href="#i-shield"/>
+</svg>
+<span>Thông tin giá và bảo hành được hiển thị rõ ràng trước khi đặt hàng.</span>
+</div>
+        @if (management) { <div class="detail-admin-actions">
+<a class="btn btn-outline-primary" asp-action="Edit" asp-route-id="@Model.MaSanPham">
+<svg class="icon">
+<use href="#i-edit"/>
+</svg> Chỉnh sửa sản phẩm</a>
+<a class="btn btn-outline-secondary" asp-action="Index">Về danh sách</a>
+</div> }
+    </section>
 </div>
