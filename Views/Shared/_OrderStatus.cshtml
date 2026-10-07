@@ -1,0 +1,13 @@
+@model string
+@{
+    var (label, css) = Model switch
+    {
+        "ChoXacNhan" => ("Chờ xác nhận", "pending"),
+        "DaXacNhan" => ("Đã xác nhận", "neutral"),
+        "DangGiao" => ("Đang giao", "shipping"),
+        "DaGiao" => ("Đã giao", "completed"),
+        "DaHuy" => ("Đã hủy", "cancelled"),
+        _ => (Model, "neutral")
+    };
+}
+<span class="status-badge @css"><span></span>@label</span>
