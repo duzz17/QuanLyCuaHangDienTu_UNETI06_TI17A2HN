@@ -1,8 +1,155 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model StorefrontViewModel
+@{
+    ViewData["Title"] = "Khám phá công nghệ";
+    ViewData["Storefront"] = true;
+    string CategoryIcon(string category) => category.ToLowerInvariant() switch
+    {
+        var s when s.Contains("điện thoại") => "phone",
+        var s when s.Contains("laptop") || s.Contains("máy tính") => "laptop",
+        var s when s.Contains("tai nghe") || s.Contains("âm thanh") => "headphones",
+        var s when s.Contains("bàn phím") || s.Contains("chuột") => "keyboard",
+        var s when s.Contains("đồng hồ") => "watch",
+        _ => "box"
+    };
 }
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<section class="store-hero">
+    <div class="hero-copy">
+<span class="hero-kicker">
+<span>
+</span> CÔNG NGHỆ TRONG TẦM TAY</span>
+<h1>Nâng tầm trải nghiệm.<br/>
+<em>Kết nối mỗi ngày.</em>
+</h1>
+<p>Từ góc làm việc đến những phút giây thư giãn.<br/>Tìm thiết bị phù hợp với phong cách của bạn.</p>
+<a class="btn btn-primary hero-cta" asp-controller="SanPham" asp-action="Index" asp-route-view="store">Khám phá sản phẩm <svg class="icon">
+<use href="#i-arrow"/>
+</svg>
+</a>
+<div class="hero-footnote">
+<svg class="icon">
+<use href="#i-shield"/>
+</svg> Giá rõ ràng <span>·</span> Bảo hành theo từng sản phẩm</div>
 </div>
+    <div class="hero-art" aria-hidden="true">
+<span class="hero-orbit orbit-one">
+</span>
+<span class="hero-orbit orbit-two">
+</span>
+<div class="hero-laptop">
+<div class="laptop-screen">
+<div class="screen-glow">
+</div>
+<span>CREATE.<br/>CONNECT.<br/>
+<b>INSPIRE.</b>
+</span>
+</div>
+<div class="laptop-base">
+</div>
+</div>
+<div class="hero-phone">
+<div class="phone-camera">
+</div>
+<span class="phone-time">09:41</span>
+<div class="phone-shape">
+</div>
+</div>
+<div class="hero-floating-label">
+<svg class="icon">
+<use href="#i-box"/>
+</svg>
+<span>Thiết bị cho<br/>
+<strong>mọi cảm hứng</strong>
+</span>
+</div>
+<span class="hero-art-caption">YOUR NEXT EVERYDAY ESSENTIAL.</span>
+</div>
+</section>
+<div class="store-benefits">
+<div>
+<svg class="icon">
+<use href="#i-box"/>
+</svg>
+<span>
+<strong>Danh mục đa dạng</strong>
+<small>Chọn thiết bị theo nhu cầu</small>
+</span>
+</div>
+<div>
+<svg class="icon">
+<use href="#i-shield"/>
+</svg>
+<span>
+<strong>Bảo hành rõ ràng</strong>
+<small>Thông tin trên từng sản phẩm</small>
+</span>
+</div>
+<div>
+<svg class="icon">
+<use href="#i-bag"/>
+</svg>
+<span>
+<strong>Đặt hàng thuận tiện</strong>
+<small>Quản lý giỏ hàng dễ dàng</small>
+</span>
+</div>
+<div>
+<svg class="icon">
+<use href="#i-truck"/>
+</svg>
+<span>
+<strong>Theo dõi đơn hàng</strong>
+<small>Cập nhật trạng thái giao hàng</small>
+</span>
+</div>
+</div>
+<section class="store-section">
+<div class="section-heading">
+<div>
+<span class="eyebrow">CHỌN THEO NHU CẦU</span>
+<h2>Thế giới công nghệ của bạn</h2>
+</div>
+<a class="text-link" asp-controller="SanPham" asp-action="Index" asp-route-view="store">Tất cả sản phẩm <svg class="icon">
+<use href="#i-arrow"/>
+</svg>
+</a>
+</div>
+<div class="category-grid">@foreach (var category in Model.Categories) { <a class="category-card" asp-controller="SanPham" asp-action="Index" asp-route-maLoai="@category.Id" asp-route-view="store">
+<span class="category-icon">
+<svg class="icon">
+<use href="#i-@CategoryIcon(category.Name)"/>
+</svg>
+</span>
+<strong>@category.Name</strong>
+<span>@category.Count sản phẩm</span>
+</a> }@if (Model.Categories.Count == 0) { <p class="text-muted">Danh mục sản phẩm sẽ được cập nhật tại đây.</p> }</div>
+</section>
+<section class="store-section">
+<div class="section-heading">
+<div>
+<span class="eyebrow">MỚI TRONG CỬA HÀNG</span>
+<h2>Khám phá sản phẩm mới</h2>
+<p>Thiết bị dành cho công việc, giải trí và cuộc sống mỗi ngày.</p>
+</div>
+<a class="text-link" asp-controller="SanPham" asp-action="Index" asp-route-view="store">Xem bộ sưu tập <svg class="icon">
+<use href="#i-arrow"/>
+</svg>
+</a>
+</div>
+<div class="product-grid">@foreach (var product in Model.Products) { <partial name="_ProductCard" model="product" /> }</div>@if (Model.Products.Count == 0) { <div class="empty-state">
+<svg class="icon">
+<use href="#i-box"/>
+</svg>
+<h3>Cửa hàng đang cập nhật sản phẩm</h3>
+<p>Hãy quay lại để khám phá những thiết bị mới.</p>
+</div> }</section>
+<section class="collection-banner">
+<div>
+<span class="eyebrow">MỘT THIẾT BỊ. NHIỀU KHẢ NĂNG.</span>
+<h2>Góc làm việc mới.<br/>Cảm hứng mới.</h2>
+<p>Khám phá thiết bị phù hợp cho hành trình sáng tạo của bạn.</p>
+</div>
+<a class="btn btn-light" asp-controller="SanPham" asp-action="Index" asp-route-view="store">Tìm sản phẩm của bạn <svg class="icon">
+<use href="#i-arrow"/>
+</svg>
+</a>
+</section>

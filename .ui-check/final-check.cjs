@@ -1,0 +1,13 @@
+﻿const {chromium}=require('C:/Users/Admin/AppData/Local/OpenAI/Codex/runtimes/cua_node/f1bf3cd3a5929acd/bin/node_modules/playwright');
+(async()=>{const b=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});const p=await b.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
+for(const width of [320,768,1440]){await p.setViewportSize({width,height:1000});
+for(const [name,url] of [['dashboard','http://localhost:5127/preview/dashboard'],['orders','http://localhost:5127/preview/orders'],['legacy-category','http://localhost:5127/preview/category'],['legacy-customers','http://localhost:5127/preview/customers'],['legacy-create-product','http://localhost:5127/preview/create-product'],['checkout','http://localhost:5127/preview/checkout'],['catalog','http://localhost:5126/SanPham'],['home','http://localhost:5126/']]){
+const r=await p.goto(url,{waitUntil:'networkidle'});const overflow=await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth);console.log(JSON.stringify({name,width,status:r.status(),overflow}));if(r.status()!==200||overflow)throw new Error('Rendering failure: '+name+' '+width);
+if(name==='dashboard'){const raw=await p.locator('body').innerText();if(raw.includes('@order')||raw.includes('@Model'))throw new Error('Unrendered Razor');if(width===1440)await p.screenshot({path:'.ui-check/dashboard-desktop.png',fullPage:true});}
+if(name==='catalog'&&width===1440)await p.screenshot({path:'.ui-check/products-desktop.png',fullPage:true});}}
+await p.setViewportSize({width:390,height:844});await p.goto('http://localhost:5126/SanPham');await p.locator('.filter-toggle').click();await p.locator('#filter-keyword').fill('iPhone');await p.locator('.filter-actions button').click();await p.waitForURL('**/SanPham*tuKhoa*');console.log(JSON.stringify({name:'mobile-filter',cards:await p.locator('.product-card').count(),keyword:await p.locator('#filter-keyword').inputValue()}));
+await p.goto('http://localhost:5126/SanPham?thuongHieu=Apple&sapXep=gia_asc&pageSize=2');const next=await p.locator('.pagination a[aria-label="Trang sau"]').getAttribute('href');if(!next.includes('thuongHieu=Apple')||!next.includes('sapXep=gia_asc')||!next.includes('pageSize=2'))throw new Error('Pagination loses filters');
+console.log(JSON.stringify({name:'pagination-preserves-filters',passed:true}));
+await p.goto('http://localhost:5126/SanPham/Create');if(!p.url().includes('/TaiKhoan/Login'))throw new Error('Admin create not protected');
+console.log(JSON.stringify({name:'admin-create-auth',passed:true}));
+console.log(JSON.stringify({pageErrors:errors}));if(errors.length)throw new Error('JS errors');await b.close();})().catch(e=>{console.error(e);process.exit(1)});

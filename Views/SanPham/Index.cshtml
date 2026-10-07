@@ -1,486 +1,170 @@
-@model IEnumerable<QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.SanPham>
-
+@model IEnumerable<SanPham>
+@using System.Globalization
 @{
-    ViewData["Title"] = "Quản lý sản phẩm";
+    var isAdmin = Context.Session.GetString("VaiTro") == "Admin" && Context.Request.Query["view"] != "store";
+    ViewData["Title"] = isAdmin ? "Quản lý sản phẩm" : "Tất cả sản phẩm";
+    ViewData["Storefront"] = !isAdmin;
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    int currentPage = ViewBag.CurrentPage;
+    int totalPages = ViewBag.TotalPages;
+    var routes = new Dictionary<string, string>
+    {
+        ["view"] = isAdmin ? "admin" : "store",
+        ["tuKhoa"] = (string?)ViewBag.CurrentTuKhoa ?? "",
+        ["maLoai"] = Convert.ToString(ViewBag.CurrentMaLoai, CultureInfo.InvariantCulture) ?? "",
+        ["thuongHieu"] = (string?)ViewBag.CurrentThuongHieu ?? "",
+        ["trangThai"] = Convert.ToString(ViewBag.CurrentTrangThai, CultureInfo.InvariantCulture) ?? "",
+        ["giaTu"] = Convert.ToString(ViewBag.CurrentGiaTu, CultureInfo.InvariantCulture) ?? "",
+        ["giaDen"] = Convert.ToString(ViewBag.CurrentGiaDen, CultureInfo.InvariantCulture) ?? "",
+        ["sapXep"] = (string?)ViewBag.CurrentSapXep ?? "",
+        ["pageSize"] = Convert.ToString(ViewBag.PageSize, CultureInfo.InvariantCulture) ?? "6"
+    };
 }
-
-<!-- Họ và tên: Phạm Văn Cường - MSSV: 23103100094 -->
-<!-- Module 2: Quản lý và tra cứu sản phẩm -->
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0 text-primary">Quản lý danh sách sản phẩm</h2>
-    <a asp-action="Create" class="btn btn-success">
-        <i class="bi bi-plus-circle"></i> + Thêm sản phẩm mới
-    </a>
+@if (!isAdmin) { <nav class="simple-breadcrumb" aria-label="Đường dẫn">
+<a asp-controller="Home" asp-action="Index" asp-route-view="store">Trang chủ</a>
+<span>/</span>
+<span>Sản phẩm</span>
+</nav> }
+<div class="page-heading">
+<div>
+<span class="eyebrow">@(isAdmin ? "QUẢN LÝ DANH MỤC HÀNG HÓA" : "KHÁM PHÁ & LỰA CHỌN")</span>
+<h1>@(isAdmin ? "Sản phẩm" : "Tìm thiết bị dành cho bạn")<span class="heading-dot">.</span>
+</h1>
+<p>@(isAdmin ? "Quản lý thông tin, giá bán và tồn kho trong cùng một nơi." : "Lọc theo danh mục, thương hiệu và ngân sách để chọn sản phẩm phù hợp.")</p>
+</div>@if (isAdmin) { <a asp-action="Create" class="btn btn-primary">
+<svg class="icon">
+<use href="#i-plus"/>
+</svg> Thêm sản phẩm</a> }</div>
+<div class="@(isAdmin ? "management-catalog" : "catalog-layout")">
+    <aside class="@(isAdmin ? "panel management-filters" : "panel catalog-filters")">
+        <div class="filter-heading">
+<h2>
+<svg class="icon">
+<use href="#i-filter"/>
+</svg> Bộ lọc sản phẩm</h2>
+<button type="button" class="icon-button filter-toggle" data-bs-toggle="collapse" data-bs-target="#product-filters" aria-expanded="false" aria-controls="product-filters" aria-label="Mở bộ lọc">
+<svg class="icon">
+<use href="#i-plus"/>
+</svg>
+</button>
 </div>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-<!-- M2-07, M2-08, M2-09: FORM TÌM KIẾM, LỌC KẾT HỢP VÀ SẮP XẾP BẰNG LINQ -->
-<div class="card mb-4 border-0 shadow-sm bg-light">
-    <div class="card-body">
-        <h5 class="card-title text-secondary mb-3">Bộ lọc & Tra cứu nâng cao</h5>
-        <form asp-action="Index" method="get">
-            <div class="row g-3">
-                <!-- Tìm theo từ khóa (Tên / Thương hiệu) -->
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Từ khóa</label>
-                    <input type="text" name="tuKhoa" value="@ViewBag.CurrentTuKhoa" class="form-control" placeholder="Nhập tên sản phẩm hoặc thương hiệu..." />
-                </div>
-
-                <!-- Lọc theo loại sản phẩm -->
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Loại sản phẩm</label>
-                    <select name="maLoai" asp-items="ViewBag.MaLoaiList" class="form-select">
-                        <option value="">-- Tất cả loại sản phẩm --</option>
-                    </select>
-                </div>
-
-                <!-- Lọc theo thương hiệu -->
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Thương hiệu</label>
-                    <select name="thuongHieu" class="form-select">
-                        <option value="">-- Tất cả thương hiệu --</option>
-                        @if (ViewBag.ThuongHieuList != null)
-                        {
-                            foreach (var th in ViewBag.ThuongHieuList)
-                            {
-                                if (ViewBag.CurrentThuongHieu == th)
-                                {
-                                    <option value="@th" selected>@th</option>
-                                }
-                                else
-                                {
-                                    <option value="@th">@th</option>
-                                }
-                            }
-                        }
-                    </select>
-                </div>
-
-                <!-- Lọc theo trạng thái -->
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Trạng thái kinh doanh</label>
-                    <select name="trangThai" class="form-select">
-                        <option value="">-- Tất cả trạng thái --</option>
-                        <option value="true" selected="@(ViewBag.CurrentTrangThai == true ? "selected" : null)">Đang kinh doanh</option>
-                        <option value="false" selected="@(ViewBag.CurrentTrangThai == false ? "selected" : null)">Ngừng kinh doanh</option>
-                    </select>
-                </div>
-
-                <!-- Lọc khoảng giá -->
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Khoảng giá từ (₫)</label>
-                    <input type="number" step="1000" name="giaTu" value="@ViewBag.CurrentGiaTu" class="form-control" placeholder="Từ..." />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Khoảng giá đến (₫)</label>
-                    <input type="number" step="1000" name="giaDen" value="@ViewBag.CurrentGiaDen" class="form-control" placeholder="Đến..." />
-                </div>
-
-                <!-- Sắp xếp -->
-                <div class="col-md-3">
-                    <label class="form-label fw-bold">Sắp xếp theo</label>
-                    <select name="sapXep" class="form-select">
-                        <option value="ten_asc" selected="@(ViewBag.CurrentSapXep == "ten_asc" ? "selected" : null)">Tên (A → Z)</option>
-                        <option value="ten_desc" selected="@(ViewBag.CurrentSapXep == "ten_desc" ? "selected" : null)">Tên (Z → A)</option>
-                        <option value="gia_asc" selected="@(ViewBag.CurrentSapXep == "gia_asc" ? "selected" : null)">Giá: Tăng dần</option>
-                        <option value="gia_desc" selected="@(ViewBag.CurrentSapXep == "gia_desc" ? "selected" : null)">Giá: Giảm dần</option>
-                        <option value="ton_asc" selected="@(ViewBag.CurrentSapXep == "ton_asc" ? "selected" : null)">Tồn kho: Thấp → Cao</option>
-                        <option value="ton_desc" selected="@(ViewBag.CurrentSapXep == "ton_desc" ? "selected" : null)">Tồn kho: Cao → Thấp</option>
-                    </select>
-                </div>
-
-                <!-- Nút thao tác lọc -->
-                <div class="col-12 d-flex gap-2">
-                    <input type="hidden" name="page" value="1" />
-                    <button type="submit" class="btn btn-primary px-4">
-                        🔍 Tìm kiếm & Lọc
-                    </button>
-                    <a asp-action="Index" class="btn btn-outline-secondary px-3">
-                        🔄 Đặt lại bộ lọc
-                    </a>
-                </div>
-            </div>
-        </form>
-    </div>
+        <div class="collapse filter-content" id="product-filters">
+<partial name="_ProductFilters" model="isAdmin" />
 </div>
-
-<!-- BẢNG DANH SÁCH SẢN PHẨM HOẶC THÔNG BÁO KHÔNG CÓ KẾT QUẢ (M2-11) -->
-@if (!Model.Any())
-{
-    <div class="card border-0 shadow-sm text-center py-5 my-4 bg-light rounded-3">
-        <div class="card-body">
-            <div class="display-4 text-muted mb-3">🔍</div>
-            <h4 class="text-secondary fw-bold">Không tìm thấy sản phẩm nào!</h4>
-            <p class="text-muted mb-4">
-                Không có sản phẩm nào phù hợp với các tiêu chí tìm kiếm hoặc bộ lọc hiện tại của bạn.<br />
-                <span class="small">Gợi ý: Thử nhập từ khóa khác, bỏ bớt điều kiện lọc danh mục/thương hiệu hoặc nới rộng khoảng giá.</span>
-            </p>
-            <a asp-action="Index" class="btn btn-primary px-4 py-2">
-                🔄 Đặt lại toàn bộ bộ lọc
-            </a>
-        </div>
-    </div>
-}
-else
-{
-    <!-- THANH CÔNG CỤ HIỂN THỊ: CHẾ ĐỘ XEM KHÁCH HÀNG / BẢNG QUẢN TRỊ -->
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div>
-            <span class="text-secondary fw-semibold">
-                Tìm thấy <span class="badge bg-primary fs-6">@ViewBag.TotalItems</span> sản phẩm phù hợp
-            </span>
-        </div>
-        <ul class="nav nav-pills" id="viewModeTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active py-1 px-3 d-flex align-items-center gap-1" id="grid-view-tab" data-bs-toggle="pill" data-bs-target="#grid-view" type="button" role="tab" aria-selected="true">
-                    <span>🛍️</span> Dạng thẻ (Khách hàng)
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link py-1 px-3 d-flex align-items-center gap-1" id="table-view-tab" data-bs-toggle="pill" data-bs-target="#table-view" type="button" role="tab" aria-selected="false">
-                    <span>📋</span> Dạng bảng (Quản trị)
-                </button>
-            </li>
-        </ul>
-    </div>
-
-    <!-- NỘI DUNG CHUYỂN ĐỔI CHẾ ĐỘ XEM (M2-12) -->
-    <div class="tab-content" id="viewModeContent">
-        <!-- 1. GIAO DIỆN LƯỚI SẢN PHẨM PHÍA KHÁCH HÀNG -->
-        <div class="tab-pane fade show active" id="grid-view" role="tabpanel" aria-labelledby="grid-view-tab">
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-                @foreach (var item in Model)
-                {
-                    <div class="col">
-                        <div class="card h-100 border-0 shadow-sm rounded-3 position-relative d-flex flex-column hover-shadow transition-all">
-                            <!-- Huy hiệu thương hiệu & trạng thái góc ảnh -->
-                            <div class="position-absolute top-0 start-0 m-2 z-1">
-                                <span class="badge bg-primary shadow-sm">@item.ThuongHieu</span>
-                            </div>
-                            <div class="position-absolute top-0 end-0 m-2 z-1">
-                                @if (!item.TrangThai)
-                                {
-                                    <span class="badge bg-secondary shadow-sm">Ngừng KD</span>
-                                }
-                                else if (item.SoLuong <= 0)
-                                {
-                                    <span class="badge bg-danger shadow-sm">Hết hàng</span>
-                                }
-                                else if (item.SoLuong <= 5)
-                                {
-                                    <span class="badge bg-warning text-dark shadow-sm">Chỉ còn @item.SoLuong</span>
-                                }
-                            </div>
-
-                            <!-- Ảnh sản phẩm -->
-                            <div class="bg-white p-3 text-center rounded-top" style="height: 200px; display: flex; align-items: center; justify-content: center;">
-                                <a asp-action="Details" asp-route-id="@item.MaSanPham" class="text-decoration-none w-100 h-100 d-flex align-items-center justify-content-center">
-                                    @if (!string.IsNullOrWhiteSpace(item.HinhAnh))
-                                    {
-                                        <img src="@item.HinhAnh" alt="@item.TenSanPham" style="max-height: 180px; max-width: 100%; object-fit: contain;" class="img-fluid" />
-                                    }
-                                    else
-                                    {
-                                        <div class="text-muted text-center">
-                                            <div style="font-size: 3rem;">📱</div>
-                                            <span class="small">Chưa có ảnh</span>
-                                        </div>
-                                    }
-                                </a>
-                            </div>
-
-                            <!-- Thông tin sản phẩm -->
-                            <div class="card-body p-3 d-flex flex-column border-top">
-                                <div class="mb-1">
-                                    <span class="badge bg-light text-dark border small">@(item.LoaiSanPham?.TenLoai ?? "Điện tử")</span>
-                                    <span class="text-muted small ms-1">🛡️ @item.ThoiGianBaoHanh th</span>
-                                </div>
-                                <h6 class="card-title fw-bold mb-1 text-truncate" title="@item.TenSanPham">
-                                    <a asp-action="Details" asp-route-id="@item.MaSanPham" class="text-decoration-none text-dark hover-primary">
-                                        @item.TenSanPham
-                                    </a>
-                                </h6>
-                                <div class="small text-warning mb-2">★★★★★ <span class="text-muted">(5.0)</span></div>
-                                
-                                <!-- Định dạng tiền tệ VNĐ (M2-12) -->
-                                <div class="mt-auto pt-2">
-                                    <div class="fs-5 fw-bold text-danger mb-2">
-                                        @item.Gia.ToString("N0") ₫
-                                    </div>
-                                    <div class="d-grid gap-1">
-                                        <a asp-action="Details" asp-route-id="@item.MaSanPham" class="btn btn-outline-primary btn-sm">
-                                            🔍 Xem chi tiết
-                                        </a>
-                                        @if (item.TrangThai && item.SoLuong > 0)
-                                        {
-                                            <a asp-controller="GioHang" asp-action="ThemVaoGio" asp-route-maSanPham="@item.MaSanPham" class="btn btn-success btn-sm">
-                                                🛒 Thêm vào giỏ
-                                            </a>
-                                        }
-                                        else
-                                        {
-                                            <button class="btn btn-secondary btn-sm" disabled>
-                                                🚫 Tạm hết hàng
-                                            </button>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-
-        <!-- 2. GIAO DIỆN BẢNG DỮ LIỆU PHÍA QUẢN TRỊ -->
-        <div class="tab-pane fade" id="table-view" role="tabpanel" aria-labelledby="table-view-tab">
-            <div class="table-responsive shadow-sm rounded">
-                <table class="table table-bordered table-hover align-middle mb-0 bg-white">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Hình ảnh</th>
-                            <th>Tên sản phẩm</th>
-                            <th>Thương hiệu</th>
-                            <th>Loại</th>
-                            <th class="text-end">Đơn giá</th>
-                            <th class="text-center">Tồn kho</th>
-                            <th class="text-center">Bảo hành</th>
-                            <th class="text-center">Trạng thái</th>
-                            <th class="text-center" style="width: 220px;">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td class="text-center" style="width: 80px;">
-                                    @if (!string.IsNullOrWhiteSpace(item.HinhAnh))
-                                    {
-                                        <img src="@item.HinhAnh" alt="@item.TenSanPham" style="max-height: 50px; max-width: 60px; object-fit: cover;" class="rounded" />
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">No image</span>
-                                    }
-                                </td>
-                                <td>
-                                    <strong>@item.TenSanPham</strong>
-                                </td>
-                                <td>@item.ThuongHieu</td>
-                                <td><span class="badge bg-info text-dark">@item.LoaiSanPham?.TenLoai</span></td>
-                                <td class="text-end text-danger fw-bold">@item.Gia.ToString("N0") ₫</td>
-                                <td class="text-center">
-                                    @if (item.SoLuong <= 5)
-                                    {
-                                        <span class="badge bg-warning text-dark">@item.SoLuong (Sắp hết)</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary">@item.SoLuong</span>
-                                    }
-                                </td>
-                                <td class="text-center">@item.ThoiGianBaoHanh tháng</td>
-                                <td class="text-center">
-                                    <!-- Form đổi trạng thái nhanh -->
-                                    <form asp-action="DoiTrangThai" asp-route-id="@item.MaSanPham" method="post" class="d-inline">
-                                        @if (item.TrangThai)
-                                        {
-                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Bấm để chuyển sang Ngừng kinh doanh">
-                                                ✓ Đang kinh doanh
-                                            </button>
-                                        }
-                                        else
-                                        {
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Bấm để chuyển sang Đang kinh doanh">
-                                                ✗ Ngừng kinh doanh
-                                            </button>
-                                        }
-                                    </form>
-                                </td>
-                                <td class="text-center text-nowrap">
-                                    @if (item.TrangThai && item.SoLuong > 0)
-                                    {
-                                        <a asp-controller="GioHang" asp-action="ThemVaoGio" asp-route-maSanPham="@item.MaSanPham" class="btn btn-sm btn-success" title="Thêm vào giỏ hàng">🛒 Thêm giỏ</a>
-                                    }
-                                    <a asp-action="Details" asp-route-id="@item.MaSanPham" class="btn btn-sm btn-outline-info" title="Xem chi tiết">Chi tiết</a>
-                                    <a asp-action="Edit" asp-route-id="@item.MaSanPham" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">Sửa</a>
-                                    
-                                    <!-- Form xóa có xác nhận -->
-                                    <form asp-action="Delete" asp-route-id="@item.MaSanPham" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">Xóa</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- M2-10 & M2-11: THANH ĐIỀU HƯỚNG PHÂN TRANG (PAGINATION) -->
-    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-        <div class="text-muted small">
-            Hiển thị <strong>@ViewBag.FromItem</strong> – <strong>@ViewBag.ToItem</strong> trên tổng số <strong>@ViewBag.TotalItems</strong> sản phẩm 
-            (Trang <strong>@ViewBag.CurrentPage</strong> / <strong>@ViewBag.TotalPages</strong>)
-        </div>
-
-        @if (ViewBag.TotalPages > 1)
+    </aside>
+    <section class="catalog-results" aria-label="Danh sách sản phẩm">
+        <div class="results-toolbar">
+<span>
+<strong>@ViewBag.TotalItems</strong> sản phẩm <span class="text-muted">· Hiển thị @ViewBag.FromItem–@ViewBag.ToItem</span>
+</span>@if (isAdmin) { <span class="table-view-label">
+<svg class="icon">
+<use href="#i-grid"/>
+</svg> Danh sách quản lý</span> } else { <span class="text-muted small">Giá niêm yết bằng VNĐ</span> }</div>
+        @if (!Model.Any())
         {
-            <nav aria-label="Phân trang danh sách sản phẩm">
-                <ul class="pagination pagination-sm mb-0">
-                    <!-- Nút Về trang đầu (M2-11) -->
-                    <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                        <a class="page-link" asp-action="Index"
-                           asp-route-page="1"
-                           asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
-                           asp-route-maLoai="@ViewBag.CurrentMaLoai"
-                           asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
-                           asp-route-trangThai="@ViewBag.CurrentTrangThai"
-                           asp-route-giaTu="@ViewBag.CurrentGiaTu"
-                           asp-route-giaDen="@ViewBag.CurrentGiaDen"
-                           asp-route-sapXep="@ViewBag.CurrentSapXep"
-                           asp-route-pageSize="@ViewBag.PageSize"
-                           tabindex="@(ViewBag.CurrentPage == 1 ? "-1" : "0")"
-                           aria-disabled="@(ViewBag.CurrentPage == 1 ? "true" : "false")">
-                            &laquo; Đầu
-                        </a>
-                    </li>
-
-                    <!-- Nút Trang trước (M2-10, M2-11) -->
-                    <li class="page-item @(ViewBag.HasPreviousPage ? "" : "disabled")">
-                        <a class="page-link" asp-action="Index"
-                           asp-route-page="@(ViewBag.CurrentPage - 1)"
-                           asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
-                           asp-route-maLoai="@ViewBag.CurrentMaLoai"
-                           asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
-                           asp-route-trangThai="@ViewBag.CurrentTrangThai"
-                           asp-route-giaTu="@ViewBag.CurrentGiaTu"
-                           asp-route-giaDen="@ViewBag.CurrentGiaDen"
-                           asp-route-sapXep="@ViewBag.CurrentSapXep"
-                           asp-route-pageSize="@ViewBag.PageSize"
-                           tabindex="@(ViewBag.HasPreviousPage ? "0" : "-1")"
-                           aria-disabled="@(ViewBag.HasPreviousPage ? "false" : "true")">
-                            &lsaquo; Trước
-                        </a>
-                    </li>
-
-                    <!-- Các nút số trang hiển thị thông minh -->
-                    @{
-                        int startPage = Math.Max(1, ViewBag.CurrentPage - 2);
-                        int endPage = Math.Min(ViewBag.TotalPages, ViewBag.CurrentPage + 2);
-
-                        if (startPage > 1)
-                        {
-                            <li class="page-item">
-                                <a class="page-link" asp-action="Index"
-                                   asp-route-page="1"
-                                   asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
-                                   asp-route-maLoai="@ViewBag.CurrentMaLoai"
-                                   asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
-                                   asp-route-trangThai="@ViewBag.CurrentTrangThai"
-                                   asp-route-giaTu="@ViewBag.CurrentGiaTu"
-                                   asp-route-giaDen="@ViewBag.CurrentGiaDen"
-                                   asp-route-sapXep="@ViewBag.CurrentSapXep"
-                                   asp-route-pageSize="@ViewBag.PageSize">1</a>
-                            </li>
-                            if (startPage > 2)
-                            {
-                                <li class="page-item disabled"><span class="page-link">...</span></li>
-                            }
-                        }
-
-                        for (int i = startPage; i <= endPage; i++)
-                        {
-                            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
-                                <a class="page-link" asp-action="Index"
-                                   asp-route-page="@i"
-                                   asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
-                                   asp-route-maLoai="@ViewBag.CurrentMaLoai"
-                                   asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
-                                   asp-route-trangThai="@ViewBag.CurrentTrangThai"
-                                   asp-route-giaTu="@ViewBag.CurrentGiaTu"
-                                   asp-route-giaDen="@ViewBag.CurrentGiaDen"
-                                   asp-route-sapXep="@ViewBag.CurrentSapXep"
-                                   asp-route-pageSize="@ViewBag.PageSize">
-                                    @i
-                                </a>
-                            </li>
-                        }
-
-                        if (endPage < ViewBag.TotalPages)
-                        {
-                            if (endPage < ViewBag.TotalPages - 1)
-                            {
-                                <li class="page-item disabled"><span class="page-link">...</span></li>
-                            }
-                            <li class="page-item">
-                                <a class="page-link" asp-action="Index"
-                                   asp-route-page="@ViewBag.TotalPages"
-                                   asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
-                                   asp-route-maLoai="@ViewBag.CurrentMaLoai"
-                                   asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
-                                   asp-route-trangThai="@ViewBag.CurrentTrangThai"
-                                   asp-route-giaTu="@ViewBag.CurrentGiaTu"
-                                   asp-route-giaDen="@ViewBag.CurrentGiaDen"
-                                   asp-route-sapXep="@ViewBag.CurrentSapXep"
-                                   asp-route-pageSize="@ViewBag.PageSize">@ViewBag.TotalPages</a>
-                            </li>
-                        }
-                    }
-
-                    <!-- Nút Trang sau (M2-10, M2-11) -->
-                    <li class="page-item @(ViewBag.HasNextPage ? "" : "disabled")">
-                        <a class="page-link" asp-action="Index"
-                           asp-route-page="@(ViewBag.CurrentPage + 1)"
-                           asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
-                           asp-route-maLoai="@ViewBag.CurrentMaLoai"
-                           asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
-                           asp-route-trangThai="@ViewBag.CurrentTrangThai"
-                           asp-route-giaTu="@ViewBag.CurrentGiaTu"
-                           asp-route-giaDen="@ViewBag.CurrentGiaDen"
-                           asp-route-sapXep="@ViewBag.CurrentSapXep"
-                           asp-route-pageSize="@ViewBag.PageSize"
-                           tabindex="@(ViewBag.HasNextPage ? "0" : "-1")"
-                           aria-disabled="@(ViewBag.HasNextPage ? "false" : "true")">
-                            Sau &rsaquo;
-                        </a>
-                    </li>
-
-                    <!-- Nút Đến trang cuối (M2-11) -->
-                    <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
-                        <a class="page-link" asp-action="Index"
-                           asp-route-page="@ViewBag.TotalPages"
-                           asp-route-tuKhoa="@ViewBag.CurrentTuKhoa"
-                           asp-route-maLoai="@ViewBag.CurrentMaLoai"
-                           asp-route-thuongHieu="@ViewBag.CurrentThuongHieu"
-                           asp-route-trangThai="@ViewBag.CurrentTrangThai"
-                           asp-route-giaTu="@ViewBag.CurrentGiaTu"
-                           asp-route-giaDen="@ViewBag.CurrentGiaDen"
-                           asp-route-sapXep="@ViewBag.CurrentSapXep"
-                           asp-route-pageSize="@ViewBag.PageSize"
-                           tabindex="@(ViewBag.CurrentPage == ViewBag.TotalPages ? "-1" : "0")"
-                           aria-disabled="@(ViewBag.CurrentPage == ViewBag.TotalPages ? "true" : "false")">
-                            Cuối &raquo;
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+            <div class="empty-state panel">
+<svg class="icon">
+<use href="#i-search"/>
+</svg>
+<h2>Chưa tìm thấy sản phẩm phù hợp</h2>
+<p>Thử từ khóa khác hoặc mở rộng danh mục và khoảng giá.</p>
+<a class="btn btn-primary" asp-action="Index" asp-route-view="@(isAdmin ? "admin" : "store")">Xóa bộ lọc</a>
+</div>
         }
-    </div>
-}
+        else if (isAdmin)
+        {
+            <div class="panel table-responsive">
+<table class="table product-management-table align-middle mb-0">
+<thead>
+<tr>
+<th>Sản phẩm</th>
+<th>Danh mục</th>
+<th class="text-end">Giá bán</th>
+<th class="text-center">Tồn kho</th>
+<th>Trạng thái</th>
+<th class="text-end">Thao tác</th>
+</tr>
+</thead>
+<tbody>
+                @foreach (var product in Model)
+                {
+                    <tr>
+<td>
+<div class="table-product">
+<img src="@(string.IsNullOrWhiteSpace(product.HinhAnh) ? Url.Content("~/images/product-placeholder.svg") : product.HinhAnh)" alt="" data-product-name="@product.TenSanPham" data-product-image/>
+<div>
+<a asp-action="Details" asp-route-id="@product.MaSanPham">@product.TenSanPham</a>
+<small>#SP@(product.MaSanPham.ToString("D4")) · @product.ThuongHieu · BH @product.ThoiGianBaoHanh tháng</small>
+</div>
+</div>
+</td>
+<td>@product.LoaiSanPham?.TenLoai</td>
+<td class="text-end text-nowrap fw-semibold">@product.Gia.ToString("N0", vi) ₫</td>
+<td class="text-center">
+<span class="stock-pill @(product.SoLuong <= 5 ? "low" : "")">@product.SoLuong</span>
+</td>
+<td>
+<form asp-action="DoiTrangThai" method="post">
+<input type="hidden" name="id" value="@product.MaSanPham"/>
+<button type="submit" class="status-badge @(product.TrangThai ? "completed" : "neutral")" title="Đổi trạng thái kinh doanh">
+<span>
+</span>@(product.TrangThai ? "Đang bán" : "Ngừng bán")</button>
+</form>
+</td>
+<td>
+<div class="table-actions">
+<a class="icon-button" asp-action="Details" asp-route-id="@product.MaSanPham" aria-label="Xem @product.TenSanPham">
+<svg class="icon">
+<use href="#i-eye"/>
+</svg>
+</a>
+<a class="icon-button" asp-action="Edit" asp-route-id="@product.MaSanPham" aria-label="Sửa @product.TenSanPham">
+<svg class="icon">
+<use href="#i-edit"/>
+</svg>
+</a>
+<form asp-action="Delete" method="post" data-confirm="Xóa sản phẩm này? Sản phẩm đã có trong đơn hàng sẽ được giữ lại.">
+<input type="hidden" name="id" value="@product.MaSanPham"/>
+<button class="icon-button text-danger" type="submit" aria-label="Xóa @product.TenSanPham">
+<svg class="icon">
+<use href="#i-trash"/>
+</svg>
+</button>
+</form>
+</div>
+</td>
+</tr>
+                }
+            </tbody>
+</table>
+</div>
+        }
+        else
+        {
+            <div class="product-grid catalog-product-grid">@foreach (var product in Model) { <partial name="_ProductCard" model="product" /> }</div>
+        }
+        @if (totalPages > 1)
+        {
+            <nav class="catalog-pagination" aria-label="Phân trang sản phẩm">
+<span>Trang @currentPage / @totalPages</span>
+<ul class="pagination mb-0">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">@if (currentPage == 1) { <button class="page-link" disabled aria-label="Trang trước">‹</button> } else { <a class="page-link" asp-action="Index" asp-all-route-data="routes" asp-route-page="@(currentPage - 1)" aria-label="Trang trước">‹</a> }</li>
+                @if (currentPage > 3) { <li class="page-item">
+<a class="page-link" asp-action="Index" asp-all-route-data="routes" asp-route-page="1">1</a>
+</li>@if (currentPage > 4) { <li class="page-item disabled">
+<span class="page-link">…</span>
+</li> } }
+                @for (int p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++) { <li class="page-item @(p == currentPage ? "active" : "")">
+<a class="page-link" asp-action="Index" asp-all-route-data="routes" asp-route-page="@p" aria-current="@(p == currentPage ? "page" : null)">@p</a>
+</li> }
+                @if (currentPage < totalPages - 2) { @if (currentPage < totalPages - 3) { <li class="page-item disabled">
+<span class="page-link">…</span>
+</li> }<li class="page-item">
+<a class="page-link" asp-action="Index" asp-all-route-data="routes" asp-route-page="@totalPages">@totalPages</a>
+</li> }
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">@if (currentPage == totalPages) { <button class="page-link" disabled aria-label="Trang sau">›</button> } else { <a class="page-link" asp-action="Index" asp-all-route-data="routes" asp-route-page="@(currentPage + 1)" aria-label="Trang sau">›</a> }</li>
+            </ul>
+</nav>
+        }
+    </section>
+</div>
