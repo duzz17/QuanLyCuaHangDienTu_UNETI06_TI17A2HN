@@ -1,0 +1,152 @@
+@model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.KhachHang
+
+@{
+    ViewData["Title"] = "Chi tiết khách hàng - " + Model.HoTen;
+    decimal tongChiTieu = Model.DonHangs?.Where(d => d.TrangThai != "DaHuy").Sum(d => d.TongTien) ?? 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-primary fw-bold mb-0">Hồ sơ khách hàng</h2>
+    <div>
+        <a asp-action="Edit" asp-route-id="@Model.MaKhachHang" class="btn btn-warning me-2">✏️ Sửa thông tin</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">← Quay lại danh sách</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Card Thông tin cá nhân -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-primary text-white font-weight-bold">
+                <h5 class="mb-0">Thông tin cá nhân</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless align-middle mb-0">
+                    <tr>
+                        <th style="width: 140px;" class="text-secondary">Mã khách hàng:</th>
+                        <td><span class="badge bg-secondary">#KH-@Model.MaKhachHang</span></td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Họ và tên:</th>
+                        <td class="fw-bold text-dark fs-5">@Model.HoTen</td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Số điện thoại:</th>
+                        <td><strong class="text-primary">@Model.SoDienThoai</strong></td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Email:</th>
+                        <td>@(string.IsNullOrWhiteSpace(Model.Email) ? "Chưa cập nhật" : Model.Email)</td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Địa chỉ:</th>
+                        <td>@(string.IsNullOrWhiteSpace(Model.DiaChi) ? "Chưa cập nhật" : Model.DiaChi)</td>
+                    </tr>
+                    <tr>
+                        <th class="text-secondary">Ngày đăng ký:</th>
+                        <td>@Model.NgayDangKy.ToString("dd/MM/yyyy HH:mm")</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Thống kê mua hàng -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-dark text-white font-weight-bold">
+                <h5 class="mb-0">Thống kê mua hàng</h5>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-center">
+                <div class="row text-center g-3">
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded border">
+                            <div class="text-muted small">Tổng số đơn hàng</div>
+                            <div class="fs-2 fw-bold text-primary">@(Model.DonHangs?.Count ?? 0)</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded border">
+                            <div class="text-muted small">Đơn đã hoàn thành</div>
+                            <div class="fs-2 fw-bold text-success">@(Model.DonHangs?.Count(d => d.TrangThai == "DaGiao") ?? 0)</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="p-3 bg-light rounded border">
+                            <div class="text-muted small">Tổng giá trị mua hàng</div>
+                            <div class="fs-3 fw-bold text-danger">@tongChiTieu.ToString("N0") ₫</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách đơn hàng của khách hàng này -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold text-secondary">📦 Lịch sử các đơn hàng đã đặt</h5>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.DonHangs == null || !Model.DonHangs.Any())
+        {
+            <div class="p-4 text-center text-muted">
+                Khách hàng này chưa có đơn hàng nào trong hệ thống.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Ngày đặt</th>
+                            <th>Địa chỉ giao hàng</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th class="text-end">Tổng tiền</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var donHang in Model.DonHangs.OrderByDescending(d => d.NgayDat))
+                        {
+                            <tr>
+                                <td>
+                                    <strong class="text-primary">#@donHang.MaDonHang</strong>
+                                </td>
+                                <td>@donHang.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@donHang.DiaChiGiaoHang</td>
+                                <td class="text-center">
+                                    @switch (donHang.TrangThai)
+                                    {
+                                        case "ChoXacNhan":
+                                            <span class="badge bg-warning text-dark">Chờ xác nhận</span>
+                                            break;
+                                        case "DangGiao":
+                                            <span class="badge bg-info text-dark">Đang giao</span>
+                                            break;
+                                        case "DaGiao":
+                                            <span class="badge bg-success">Đã giao</span>
+                                            break;
+                                        case "DaHuy":
+                                            <span class="badge bg-danger">Đã hủy</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-secondary">@donHang.TrangThai</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="text-end fw-bold text-danger">@donHang.TongTien.ToString("N0") ₫</td>
+                                <td class="text-center">
+                                    <a asp-controller="DonHang" asp-action="Details" asp-route-id="@donHang.MaDonHang" class="btn btn-sm btn-outline-info">Chi tiết đơn</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
