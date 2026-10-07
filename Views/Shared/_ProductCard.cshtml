@@ -1,0 +1,26 @@
+@model SanPham
+@using System.Globalization
+@{
+    var available = Model.TrangThai && Model.SoLuong > 0;
+    var image = string.IsNullOrWhiteSpace(Model.HinhAnh) ? Url.Content("~/images/product-placeholder.svg") : Model.HinhAnh;
+}
+<article class="product-card">
+    <a class="product-image" asp-controller="SanPham" asp-action="Details" asp-route-id="@Model.MaSanPham" asp-route-view="store">
+        <img src="@image" alt="@Model.TenSanPham" loading="lazy" data-product-image />
+        <span class="product-brand">@Model.ThuongHieu</span>
+        @if (!available) { <span class="product-stock sold-out">Tạm hết hàng</span> }
+    </a>
+    <div class="product-card-content">
+        <span class="product-category">@Model.LoaiSanPham?.TenLoai</span>
+        <h3><a asp-controller="SanPham" asp-action="Details" asp-route-id="@Model.MaSanPham" asp-route-view="store">@Model.TenSanPham</a></h3>
+        <span class="product-warranty"><svg class="icon"><use href="#i-shield" /></svg>Bảo hành @Model.ThoiGianBaoHanh tháng</span>
+        <div class="product-card-bottom">
+            <strong class="product-price">@Model.Gia.ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) <small>₫</small></strong>
+            <form asp-controller="GioHang" asp-action="ThemVaoGio" method="post">
+                <input type="hidden" name="maSanPham" value="@Model.MaSanPham" />
+                <input type="hidden" name="soLuong" value="1" />
+                <button class="add-cart-button" type="submit" disabled="@(!available)" aria-label="Thêm @Model.TenSanPham vào giỏ hàng"><svg class="icon"><use href="#i-plus" /></svg></button>
+            </form>
+        </div>
+    </div>
+</article>

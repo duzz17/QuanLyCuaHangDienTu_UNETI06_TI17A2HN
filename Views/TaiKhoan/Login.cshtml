@@ -1,54 +1,80 @@
-@*
-    Họ và tên: Nguyễn Xuân Đức
-    Mã sinh viên: 23103100062
-    Nội dung thực hiện: Giao diện đăng nhập hệ thống, hiển thị Validation (Module 1 - Tuần 2: M1-06, M1-10)
-*@
-@model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.ViewModels.LoginViewModel
+@* Nguyễn Xuân Đức · MSSV 23103100062 · Module 1: đăng nhập và validation. *@
+@model LoginViewModel
 @{
     ViewData["Title"] = "Đăng nhập";
+    ViewData["Storefront"] = true;
 }
-
-<div class="row justify-content-center">
-    <div class="col-md-5 col-lg-4">
-        <div class="card shadow-sm border-0 mt-4">
-            <div class="card-body p-4">
-                <div class="text-center mb-4">
-                    <h3 class="fw-bold text-primary">ĐĂNG NHẬP</h3>
-                    <p class="text-muted small">Hệ thống quản lý cửa hàng điện tử - Nhóm 6</p>
-                </div>
-
-                <form asp-controller="TaiKhoan" asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
-                    @Html.AntiForgeryToken()
-
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
-
-                    <div class="mb-3">
-                        <label asp-for="TenDangNhap" class="form-label fw-semibold"></label>
-                        <input asp-for="TenDangNhap" class="form-control" placeholder="Nhập tên đăng nhập..." autofocus />
-                        <span asp-validation-for="TenDangNhap" class="text-danger small"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="MatKhau" class="form-label fw-semibold"></label>
-                        <input asp-for="MatKhau" class="form-control" placeholder="Nhập mật khẩu..." />
-                        <span asp-validation-for="MatKhau" class="text-danger small"></span>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
-                        Đăng nhập
-                    </button>
-                </form>
-
-                <div class="mt-4 p-3 bg-light rounded small border">
-                    <div class="fw-bold text-secondary mb-1">Gợi ý tài khoản demo:</div>
-                    <div>• Quản trị viên: <code>admin</code> / <code>Admin@123</code></div>
-                    <div>• Khách hàng: theo dữ liệu trong bảng <code>TaiKhoan</code></div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="login-layout">
+    <section class="login-story">
+<span class="eyebrow">CHÀO MỪNG ĐẾN ĐIỆN TỬ UNETI</span>
+<h1>Mọi trải nghiệm tốt<br/>bắt đầu từ một<br/>
+<em>kết nối.</em>
+</h1>
+<p>Đăng nhập để mua sắm, theo dõi đơn hàng<br/>và quản lý thông tin của bạn.</p>
+<div class="login-art" aria-hidden="true">
+<span>
+<svg class="icon">
+<use href="#i-laptop"/>
+</svg>
+</span>
+<span>
+<svg class="icon">
+<use href="#i-headphones"/>
+</svg>
+</span>
+<span>
+<svg class="icon">
+<use href="#i-phone"/>
+</svg>
+</span>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+<div class="login-story-footer">
+<svg class="icon">
+<use href="#i-shield"/>
+</svg> Tài khoản của bạn. Trải nghiệm của bạn.</div>
+</section>
+    <section class="login-form-panel">
+<div class="login-form-heading">
+<span class="eyebrow">RẤT VUI KHI GẶP LẠI BẠN</span>
+<h2>Đăng nhập</h2>
+<p>Sử dụng tài khoản được cấp tại cửa hàng.</p>
+</div>
+        <form asp-controller="TaiKhoan" asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert">
+</div>
+<div class="mb-4">
+<label asp-for="TenDangNhap" class="form-label">
+</label>
+<input asp-for="TenDangNhap" class="form-control" autocomplete="username" placeholder="Tên đăng nhập" autofocus/>
+<span asp-validation-for="TenDangNhap" class="text-danger small">
+</span>
+</div>
+<div class="mb-4">
+<label asp-for="MatKhau" class="form-label">
+</label>
+<div class="password-field">
+<input asp-for="MatKhau" type="password" class="form-control" autocomplete="current-password" placeholder="Nhập mật khẩu"/>
+<button type="button" class="icon-button" data-toggle-password="MatKhau" aria-label="Hiện mật khẩu" aria-pressed="false">
+<svg class="icon">
+<use href="#i-eye"/>
+</svg>
+</button>
+</div>
+<span asp-validation-for="MatKhau" class="text-danger small">
+</span>
+</div>
+<button class="btn btn-primary w-100 login-submit" type="submit">Đăng nhập <svg class="icon">
+<use href="#i-arrow"/>
+</svg>
+</button>
+</form>
+        <div class="login-help">Cần tài khoản hoặc hỗ trợ đăng nhập?<br/>
+<strong>Vui lòng liên hệ quản trị viên cửa hàng.</strong>
+</div>
+<a class="text-link login-back" asp-controller="SanPham" asp-action="Index" asp-route-view="store">Tiếp tục khám phá sản phẩm <svg class="icon">
+<use href="#i-arrow"/>
+</svg>
+</a>
+    </section>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

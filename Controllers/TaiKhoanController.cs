@@ -90,7 +90,7 @@ public class TaiKhoanController : Controller
         // Nếu là Admin, có thể chuyển về trang Quản lý loại sản phẩm hoặc Trang chủ
         if (taiKhoan.VaiTro == "Admin")
         {
-            return RedirectToAction("Index", "LoaiSanPham");
+            return RedirectToAction("Index", "Dashboard");
         }
 
         return RedirectToAction("Index", "Home");

@@ -1,0 +1,10 @@
+@foreach (var key in new[] { "ThongBao", "Success", "Loi", "Error" })
+{
+    if (TempData[key] is string message && !string.IsNullOrWhiteSpace(message))
+    {
+        <div class="alert @(key is "Loi" or "Error" ? "alert-danger" : "alert-success") alert-dismissible fade show" role="alert">
+            @message
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng thông báo"></button>
+        </div>
+    }
+}
