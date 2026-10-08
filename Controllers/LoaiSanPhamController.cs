@@ -1,6 +1,6 @@
 // Họ và tên: Nguyễn Xuân Đức
 // Mã sinh viên: 23103100062
-// Nội dung thực hiện: CRUD quản lý loại sản phẩm - danh sách, chi tiết, thêm, sửa, xóa, kiểm tra trùng tên và chặn xóa khi có sản phẩm liên quan (Module 1 - Tuần 2: M1-08, M1-09, M1-10)
+// Nội dung thực hiện: CRUD quản lý loại sản phẩm - danh sách, chi tiết, thêm, sửa, xóa, đổi trạng thái, kiểm tra trùng tên và chặn xóa khi có sản phẩm liên quan (Module 1 - Tuần 2: M1-08, M1-09, M1-10 | Tuần 3: Bổ sung TrangThai đầy đủ)
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -63,10 +63,10 @@ public class LoaiSanPhamController : Controller
         return View(new LoaiSanPham());
     }
 
-    // POST: /LoaiSanPham/Create (M1-09, M1-10: Thêm mới, kiểm tra trùng tên, Validation)
+    // POST: /LoaiSanPham/Create (M1-09, M1-10: Thêm mới, kiểm tra trùng tên, Validation; Tuần 3: Bind TrangThai)
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("TenLoai,MoTa")] LoaiSanPham loaiSanPham)
+    public async Task<IActionResult> Create([Bind("TenLoai,MoTa,TrangThai")] LoaiSanPham loaiSanPham)
     {
         // M1-10: Kiểm tra tên loại sản phẩm không để trống
         if (string.IsNullOrWhiteSpace(loaiSanPham.TenLoai))
@@ -119,10 +119,10 @@ public class LoaiSanPhamController : Controller
         return View(loaiSanPham);
     }
 
-    // POST: /LoaiSanPham/Edit/5 (M1-09, M1-10: Cập nhật, kiểm tra trùng tên)
+    // POST: /LoaiSanPham/Edit/5 (M1-09, M1-10: Cập nhật, kiểm tra trùng tên; Tuần 3: Bind TrangThai)
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("MaLoai,TenLoai,MoTa")] LoaiSanPham loaiSanPham)
+    public async Task<IActionResult> Edit(int id, [Bind("MaLoai,TenLoai,MoTa,TrangThai")] LoaiSanPham loaiSanPham)
     {
         if (id != loaiSanPham.MaLoai)
         {
@@ -228,7 +228,7 @@ public class LoaiSanPhamController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // POST: /LoaiSanPham/DoiTrangThai/5 (M1-09: Đổi trạng thái)
+    // POST: /LoaiSanPham/DoiTrangThai/5 (M1-09, Tuần 3: Toggle trạng thái và lưu vào DB)
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DoiTrangThai(int id)
@@ -239,7 +239,13 @@ public class LoaiSanPhamController : Controller
             return NotFound();
         }
 
-        TempData["ThongBao"] = $"Thao tác cập nhật trạng thái loại sản phẩm '{loaiSanPham.TenLoai}' hoàn tất.";
+        // Tuần 3: Toggle trạng thái và lưu vào database
+        loaiSanPham.TrangThai = !loaiSanPham.TrangThai;
+        _context.Update(loaiSanPham);
+        await _context.SaveChangesAsync();
+
+        string trangThaiMoi = loaiSanPham.TrangThai ? "Đang hoạt động" : "Ngừng hoạt động";
+        TempData["ThongBao"] = $"Đã chuyển trạng thái loại sản phẩm '{loaiSanPham.TenLoai}' sang '{trangThaiMoi}'.";
         return RedirectToAction(nameof(Index));
     }
 

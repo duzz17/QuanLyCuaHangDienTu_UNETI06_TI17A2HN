@@ -1,7 +1,7 @@
 @*
     Họ và tên: Nguyễn Xuân Đức
     Mã sinh viên: 23103100062
-    Nội dung thực hiện: Giao diện xóa loại sản phẩm, kiểm tra ràng buộc không cho xóa khi có sản phẩm (Module 1 - Tuần 2: M1-09, M1-10)
+    Nội dung thực hiện: Giao diện xóa loại sản phẩm, kiểm tra ràng buộc không cho xóa khi có sản phẩm, hiển thị TrangThai (Module 1 - Tuần 2: M1-09, M1-10 | Tuần 3: Bổ sung TrangThai)
 *@
 @model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.LoaiSanPham
 @{
@@ -43,6 +43,18 @@
 
                     <dt class="col-sm-4 text-muted">Mô tả:</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.MoTa) ? "—" : Model.MoTa)</dd>
+
+                    <dt class="col-sm-4 text-muted">Trạng thái:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.TrangThai)
+                        {
+                            <span class="badge bg-success">Đang hoạt động</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Ngừng hoạt động</span>
+                        }
+                    </dd>
                 </dl>
 
                 <form asp-action="Delete" method="post" class="mt-4">

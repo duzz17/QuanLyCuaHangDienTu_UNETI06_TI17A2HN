@@ -1,6 +1,6 @@
 // Họ và tên: Nguyễn Xuân Đức
 // Mã sinh viên: 23103100062
-// Nội dung thực hiện: Xử lý đăng nhập bằng EF Core/LINQ, kiểm tra tài khoản, trạng thái khóa, quản lý Session và đăng xuất (Module 1 - Tuần 2: M1-06, M1-07, M1-10)
+// Nội dung thực hiện: Xử lý đăng nhập bằng EF Core/LINQ, kiểm tra tài khoản, trạng thái khóa, quản lý Session và đăng xuất; hỗ trợ returnUrl để quay lại giỏ hàng sau đăng nhập (Module 1 - Tuần 2: M1-06, M1-07, M1-10 | Tuần 3: Tích hợp returnUrl giỏ hàng)
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

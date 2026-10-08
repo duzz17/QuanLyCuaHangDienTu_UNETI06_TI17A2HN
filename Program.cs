@@ -37,7 +37,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        DbInitializer.Initialize(context);
+        await DbInitializer.InitializeAsync(context);
     }
     catch (Exception ex)
     {

@@ -1,0 +1,43 @@
+@model CustomerProfileViewModel
+@{
+    var isAdmin = Model.Role == "Admin";
+    ViewData["Title"] = "Hồ sơ cá nhân";
+    ViewData["Storefront"] = !isAdmin;
+}
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">TÀI KHOẢN CỦA BẠN</span>
+        <h1>Hồ sơ cá nhân<span class="heading-dot">.</span></h1>
+        <p>Thông tin tài khoản đang đăng nhập.</p>
+    </div>
+</div>
+<section class="panel p-4" style="max-width: 720px">
+    <dl class="row mb-0">
+        <dt class="col-sm-4">Họ và tên</dt>
+        <dd class="col-sm-8">@Model.DisplayName</dd>
+        <dt class="col-sm-4">Tên đăng nhập</dt>
+        <dd class="col-sm-8">@Model.Username</dd>
+        <dt class="col-sm-4">Vai trò</dt>
+        <dd class="col-sm-8">@(isAdmin ? "Quản trị viên" : "Khách hàng")</dd>
+        @if (!string.IsNullOrWhiteSpace(Model.Email))
+        {
+            <dt class="col-sm-4">Email</dt>
+            <dd class="col-sm-8">@Model.Email</dd>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Phone))
+        {
+            <dt class="col-sm-4">Số điện thoại</dt>
+            <dd class="col-sm-8">@Model.Phone</dd>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Address))
+        {
+            <dt class="col-sm-4">Địa chỉ</dt>
+            <dd class="col-sm-8">@Model.Address</dd>
+        }
+        @if (Model.RegisteredAt.HasValue)
+        {
+            <dt class="col-sm-4">Ngày đăng ký</dt>
+            <dd class="col-sm-8">@Model.RegisteredAt.Value.ToString("dd/MM/yyyy")</dd>
+        }
+    </dl>
+</section>

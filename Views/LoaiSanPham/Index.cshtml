@@ -1,7 +1,7 @@
 @*
     Họ và tên: Nguyễn Xuân Đức
     Mã sinh viên: 23103100062
-    Nội dung thực hiện: Giao diện danh sách loại sản phẩm (Module 1 - Tuần 2: M1-09)
+    Nội dung thực hiện: Giao diện danh sách loại sản phẩm, hiển thị và đổi trạng thái (Module 1 - Tuần 2: M1-09 | Tuần 3: Bổ sung cột TrangThai, nút đổi trạng thái)
 *@
 @model IEnumerable<QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.LoaiSanPham>
 @{
@@ -27,8 +27,9 @@
                         <th style="width: 100px;">Mã loại</th>
                         <th style="width: 250px;">Tên loại sản phẩm</th>
                         <th>Mô tả</th>
-                        <th style="width: 150px;" class="text-center">Số sản phẩm</th>
-                        <th style="width: 240px;" class="text-center">Thao tác</th>
+                        <th style="width: 130px;" class="text-center">Số sản phẩm</th>
+                        <th style="width: 130px;" class="text-center">Trạng thái</th>
+                        <th style="width: 280px;" class="text-center">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -46,12 +47,29 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
+                                    @if (item.TrangThai)
+                                    {
+                                        <span class="badge bg-success">Đang hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Ngừng hoạt động</span>
+                                    }
+                                </td>
+                                <td class="text-center">
                                     <a asp-action="Details" asp-route-id="@item.MaLoai" class="btn btn-sm btn-outline-info me-1">
                                         Chi tiết
                                     </a>
                                     <a asp-action="Edit" asp-route-id="@item.MaLoai" class="btn btn-sm btn-outline-warning me-1">
                                         Sửa
                                     </a>
+                                    <form asp-action="DoiTrangThai" asp-route-id="@item.MaLoai" method="post" class="d-inline me-1">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm @(item.TrangThai ? "btn-outline-secondary" : "btn-outline-success")"
+                                                title="@(item.TrangThai ? "Ngừng hoạt động" : "Kích hoạt lại")">
+                                            @(item.TrangThai ? "Ngừng" : "Kích hoạt")
+                                        </button>
+                                    </form>
                                     <a asp-action="Delete" asp-route-id="@item.MaLoai" class="btn btn-sm btn-outline-danger">
                                         Xóa
                                     </a>
@@ -62,7 +80,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">
+                            <td colspan="6" class="text-center py-4 text-muted">
                                 <em>Chưa có loại sản phẩm nào trong cơ sở dữ liệu.</em>
                             </td>
                         </tr>
