@@ -114,6 +114,22 @@ public class DonHangController : Controller
             return RedirectToAction("Index", "SanPham");
         }
 
+        // Đồng bộ đơn giá mới nhất từ Database vào giỏ hàng hiển thị
+        bool cartUpdated = false;
+        foreach (var item in cart)
+        {
+            var sp = await _context.SanPhams.FindAsync(item.MaSanPham);
+            if (sp != null && sp.Gia != item.Gia)
+            {
+                item.Gia = sp.Gia;
+                cartUpdated = true;
+            }
+        }
+        if (cartUpdated)
+        {
+            HttpContext.Session.SetString(CART_KEY, JsonSerializer.Serialize(cart));
+        }
+
         var model = new DatHangViewModel
         {
             GioHang = new GioHangViewModel { Items = cart }
@@ -137,7 +153,7 @@ public class DonHangController : Controller
         return View(model);
     }
 
-    // POST: /DonHang/DatHang (Xử lý đặt hàng)
+    // POST: /DonHang/DatHang (Xử lý đặt hàng - Tính tiền phía Server & Lấy giá từ DB)
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DatHang(DatHangViewModel model)
@@ -165,12 +181,15 @@ public class DonHangController : Controller
 
             if (maKhachHangSession.HasValue)
             {
-                khachHang = await _context.KhachHangs.FindAsync(maKhachHangSession.Value);
+                khachHang = await _context.KhachHangs
+                    .Include(k => k.TaiKhoan)
+                    .FirstOrDefaultAsync(k => k.MaKhachHang == maKhachHangSession.Value);
             }
 
             if (khachHang == null && !string.IsNullOrWhiteSpace(model.SoDienThoai))
             {
                 khachHang = await _context.KhachHangs
+                    .Include(k => k.TaiKhoan)
                     .FirstOrDefaultAsync(k => k.SoDienThoai == model.SoDienThoai.Trim());
             }
 
@@ -188,12 +207,72 @@ public class DonHangController : Controller
                 await _context.SaveChangesAsync();
             }
 
-            // 2. Tạo đơn hàng mới
+            // Kiểm tra trạng thái khóa tài khoản nếu có tài khoản liên kết
+            if (khachHang.TaiKhoan != null && !khachHang.TaiKhoan.TrangThai)
+            {
+                await transaction.RollbackAsync();
+                TempData["Loi"] = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.";
+                return RedirectToAction("Logout", "TaiKhoan");
+            }
+
+            // 2. Kiểm tra tính hợp lệ từng sản phẩm, lấy đơn giá từ DB và tính thành tiền / tổng tiền Server-side
+            decimal tongTienServer = 0;
+            var danhSachChiTiet = new List<ChiTietDonHang>();
+
+            foreach (var item in cart)
+            {
+                if (item.SoLuong <= 0)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["Loi"] = $"Số lượng đặt của sản phẩm '{item.TenSanPham}' không hợp lệ.";
+                    return View(model);
+                }
+
+                var sanPham = await _context.SanPhams.FindAsync(item.MaSanPham);
+                if (sanPham == null || sanPham.TrangThai != TrangThaiSanPham.DangKinhDoanh)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["Loi"] = $"Sản phẩm '{item.TenSanPham}' hiện không khả dụng hoặc đã ngừng kinh doanh.";
+                    return View(model);
+                }
+
+                if (sanPham.SoLuong < item.SoLuong)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["Loi"] = $"Sản phẩm '{sanPham.TenSanPham}' chỉ còn {sanPham.SoLuong} sản phẩm trong kho (bạn đặt {item.SoLuong}).";
+                    return View(model);
+                }
+
+                // Lấy đơn giá chuẩn từ Database tại thời điểm đặt; tính ThanhTien và TongTien ở server, không tin giá client gửi
+                decimal donGiaThucTe = sanPham.Gia;
+                decimal thanhTien = donGiaThucTe * item.SoLuong;
+                tongTienServer += thanhTien;
+
+                // Trừ số lượng tồn kho
+                sanPham.SoLuong -= item.SoLuong;
+                _context.SanPhams.Update(sanPham);
+
+                danhSachChiTiet.Add(new ChiTietDonHang
+                {
+                    MaSanPham = item.MaSanPham,
+                    SoLuong = item.SoLuong,
+                    DonGia = donGiaThucTe
+                });
+            }
+
+            if (!danhSachChiTiet.Any())
+            {
+                await transaction.RollbackAsync();
+                TempData["Loi"] = "Đơn hàng phải có ít nhất một sản phẩm.";
+                return View(model);
+            }
+
+            // 3. Tạo đơn hàng mới với Tổng tiền tính từ Server
             var donHang = new DonHang
             {
                 MaKhachHang = khachHang.MaKhachHang,
                 NgayDat = DateTime.Now,
-                TongTien = cart.Sum(i => i.ThanhTien),
+                TongTien = tongTienServer,
                 TrangThai = "ChoXacNhan",
                 DiaChiGiaoHang = model.DiaChiGiaoHang.Trim(),
                 SoDienThoaiGiaoHang = model.SoDienThoai.Trim()
@@ -201,42 +280,17 @@ public class DonHangController : Controller
             _context.DonHangs.Add(donHang);
             await _context.SaveChangesAsync();
 
-            // 3. Thêm chi tiết đơn hàng & Trừ tồn kho sản phẩm
-            foreach (var item in cart)
+            // 4. Gán MaDonHang và lưu danh sách chi tiết đơn hàng
+            foreach (var ct in danhSachChiTiet)
             {
-                var sanPham = await _context.SanPhams.FindAsync(item.MaSanPham);
-                if (sanPham == null || sanPham.TrangThai != TrangThaiSanPham.DangKinhDoanh)
-                {
-                    await transaction.RollbackAsync();
-                    TempData["Loi"] = $"Sản phẩm '{item.TenSanPham}' hiện không khả dụng.";
-                    return View(model);
-                }
-
-                if (sanPham.SoLuong < item.SoLuong)
-                {
-                    await transaction.RollbackAsync();
-                    TempData["Loi"] = $"Sản phẩm '{sanPham.TenSanPham}' chỉ còn {sanPham.SoLuong} sản phẩm trong kho.";
-                    return View(model);
-                }
-
-                // Trừ số lượng tồn kho
-                sanPham.SoLuong -= item.SoLuong;
-                _context.SanPhams.Update(sanPham);
-
-                var chiTiet = new ChiTietDonHang
-                {
-                    MaDonHang = donHang.MaDonHang,
-                    MaSanPham = item.MaSanPham,
-                    SoLuong = item.SoLuong,
-                    DonGia = item.Gia
-                };
-                _context.ChiTietDonHangs.Add(chiTiet);
+                ct.MaDonHang = donHang.MaDonHang;
             }
-
+            _context.ChiTietDonHangs.AddRange(danhSachChiTiet);
             await _context.SaveChangesAsync();
+
             await transaction.CommitAsync();
 
-            // Xóa giỏ hàng Session
+            // Xóa giỏ hàng Session sau khi đặt thành công
             HttpContext.Session.Remove(CART_KEY);
 
             TempData["ThongBao"] = $"Đặt hàng thành công! Mã đơn hàng của bạn là #{donHang.MaDonHang}.";
