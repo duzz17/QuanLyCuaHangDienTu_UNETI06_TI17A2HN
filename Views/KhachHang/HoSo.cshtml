@@ -1,43 +1,186 @@
+@*
+    Họ và tên: Ngô Khánh Quốc Huy - MSSV: 23103100313
+    Nội dung thực hiện: Giao diện xem và sửa hồ sơ cá nhân của khách hàng, Validation dữ liệu (Module 3 - M3-06)
+*@
 @model CustomerProfileViewModel
 @{
     var isAdmin = Model.Role == "Admin";
     ViewData["Title"] = "Hồ sơ cá nhân";
     ViewData["Storefront"] = !isAdmin;
 }
+
 <div class="page-heading">
     <div>
         <span class="eyebrow">TÀI KHOẢN CỦA BẠN</span>
         <h1>Hồ sơ cá nhân<span class="heading-dot">.</span></h1>
-        <p>Thông tin tài khoản đang đăng nhập.</p>
+        <p>Xem và chỉnh sửa thông tin tài khoản đang đăng nhập.</p>
+    </div>
+    @if (!isAdmin)
+    {
+        <div>
+            <a asp-controller="DonHang" asp-action="Index" class="btn btn-outline-secondary">
+                <svg class="icon me-1"><use href="#i-bag"/></svg>Đơn hàng của tôi
+            </a>
+        </div>
+    }
+</div>
+
+<div class="row g-4" style="max-width: 1040px">
+    <!-- Cột Form Sửa Thông Tin Cá Nhân -->
+    <div class="col-lg-8">
+        <section class="panel p-0 overflow-hidden">
+            <div class="panel-heading">
+                <div>
+                    <h2>Thông tin tài khoản</h2>
+                    <p>Chỉnh sửa các trường thông tin cá nhân được phép.</p>
+                </div>
+            </div>
+            <div class="p-4">
+                <form asp-action="HoSo" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="MaKhachHang" />
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4" role="alert"></div>
+
+                    <!-- Tên đăng nhập (chỉ đọc) -->
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-sm-3 col-form-label fw-semibold text-secondary small">Tên đăng nhập</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control bg-light" value="@Model.Username" readonly />
+                            <div class="form-text small text-muted">Tên đăng nhập được gắn với tài khoản và không thể thay đổi.</div>
+                        </div>
+                    </div>
+
+                    <!-- Họ và tên (được phép sửa) -->
+                    <div class="row mb-3 align-items-center">
+                        <label asp-for="DisplayName" class="col-sm-3 col-form-label fw-semibold">
+                            Họ và tên <span class="text-danger">*</span>
+                        </label>
+                        <div class="col-sm-9">
+                            <input asp-for="DisplayName" class="form-control" placeholder="Nhập họ và tên đầy đủ..." />
+                            <span asp-validation-for="DisplayName" class="text-danger small d-block mt-1"></span>
+                        </div>
+                    </div>
+
+                    <!-- Số điện thoại (được phép sửa) -->
+                    <div class="row mb-3 align-items-center">
+                        <label asp-for="Phone" class="col-sm-3 col-form-label fw-semibold">
+                            Số điện thoại <span class="text-danger">*</span>
+                        </label>
+                        <div class="col-sm-9">
+                            <input asp-for="Phone" class="form-control" placeholder="Ví dụ: 0912345678" />
+                            <span asp-validation-for="Phone" class="text-danger small d-block mt-1"></span>
+                        </div>
+                    </div>
+
+                    <!-- Email (được phép sửa) -->
+                    <div class="row mb-3 align-items-center">
+                        <label asp-for="Email" class="col-sm-3 col-form-label fw-semibold">
+                            Email <span class="text-danger">*</span>
+                        </label>
+                        <div class="col-sm-9">
+                            <input asp-for="Email" type="email" class="form-control" placeholder="email@example.com" />
+                            <span asp-validation-for="Email" class="text-danger small d-block mt-1"></span>
+                        </div>
+                    </div>
+
+                    <!-- Ngày sinh (được phép sửa) -->
+                    <div class="row mb-3 align-items-center">
+                        <label asp-for="DateOfBirth" class="col-sm-3 col-form-label fw-semibold">
+                            Ngày sinh
+                        </label>
+                        <div class="col-sm-9">
+                            <input asp-for="DateOfBirth" type="date" class="form-control" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="DateOfBirth" class="text-danger small d-block mt-1"></span>
+                        </div>
+                    </div>
+
+                    <!-- Địa chỉ (được phép sửa) -->
+                    <div class="row mb-4">
+                        <label asp-for="Address" class="col-sm-3 col-form-label fw-semibold">
+                            Địa chỉ nhận hàng
+                        </label>
+                        <div class="col-sm-9">
+                            <textarea asp-for="Address" class="form-control" rows="3" placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."></textarea>
+                            <span asp-validation-for="Address" class="text-danger small d-block mt-1"></span>
+                        </div>
+                    </div>
+
+                    <!-- Nút thao tác -->
+                    <div class="row">
+                        <div class="col-sm-9 offset-sm-3 d-flex gap-2 align-items-center">
+                            <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                                <svg class="icon me-1"><use href="#i-check"/></svg>Lưu thay đổi
+                            </button>
+                            <a asp-action="HoSo" class="btn btn-outline-secondary px-3">
+                                Hủy bỏ
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <!-- Cột Tổng quan & Thống kê tài khoản -->
+    <div class="col-lg-4">
+        <section class="panel p-0 overflow-hidden mb-4">
+            <div class="panel-heading">
+                <div>
+                    <h2>Tổng quan tài khoản</h2>
+                    <p>Trạng thái tài khoản của bạn</p>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="avatar fs-4" style="width:52px; height:52px; font-weight:700;">
+                        @(string.IsNullOrWhiteSpace(Model.DisplayName) ? "U" : Model.DisplayName[..1].ToUpper())
+                    </span>
+                    <div>
+                        <strong class="d-block fs-6">@Model.DisplayName</strong>
+                        <span class="badge @(isAdmin ? "bg-dark" : "bg-success")">
+                            @(isAdmin ? "Quản trị viên" : "Khách hàng thân thiết")
+                        </span>
+                    </div>
+                </div>
+
+                <hr class="my-3" style="border-color: var(--line);" />
+
+                <dl class="row mb-0 small">
+                    <dt class="col-6 text-muted">Mã khách hàng:</dt>
+                    <dd class="col-6 text-end fw-semibold">#KH-@Model.MaKhachHang</dd>
+
+                    <dt class="col-6 text-muted">Ngày đăng ký:</dt>
+                    <dd class="col-6 text-end fw-semibold">
+                        @(Model.RegisteredAt.HasValue ? Model.RegisteredAt.Value.ToString("dd/MM/yyyy") : "Mới")
+                    </dd>
+
+                    @if (!isAdmin)
+                    {
+                        <dt class="col-6 text-muted">Đơn hàng đã đặt:</dt>
+                        <dd class="col-6 text-end fw-semibold text-primary">@Model.SoLuongDonHang đơn</dd>
+
+                        <dt class="col-6 text-muted">Tổng tích lũy:</dt>
+                        <dd class="col-6 text-end fw-bold text-danger">@Model.TongChiTieu.ToString("N0") ₫</dd>
+                    }
+                </dl>
+            </div>
+        </section>
+
+        @if (!isAdmin)
+        {
+            <section class="panel p-4 text-center">
+                <svg class="icon text-primary mb-2" style="width:36px; height:36px;"><use href="#i-shield"/></svg>
+                <h6 class="fw-bold mb-1">Bảo mật thông tin</h6>
+                <p class="text-muted small mb-3">Thông tin của bạn được lưu trữ an toàn và chỉ sử dụng cho mục đích giao nhận hàng hóa.</p>
+                <a asp-controller="DonHang" asp-action="Index" class="btn btn-outline-primary btn-sm w-100">
+                    Theo dõi lịch sử đơn hàng
+                </a>
+            </section>
+        }
     </div>
 </div>
-<section class="panel p-4" style="max-width: 720px">
-    <dl class="row mb-0">
-        <dt class="col-sm-4">Họ và tên</dt>
-        <dd class="col-sm-8">@Model.DisplayName</dd>
-        <dt class="col-sm-4">Tên đăng nhập</dt>
-        <dd class="col-sm-8">@Model.Username</dd>
-        <dt class="col-sm-4">Vai trò</dt>
-        <dd class="col-sm-8">@(isAdmin ? "Quản trị viên" : "Khách hàng")</dd>
-        @if (!string.IsNullOrWhiteSpace(Model.Email))
-        {
-            <dt class="col-sm-4">Email</dt>
-            <dd class="col-sm-8">@Model.Email</dd>
-        }
-        @if (!string.IsNullOrWhiteSpace(Model.Phone))
-        {
-            <dt class="col-sm-4">Số điện thoại</dt>
-            <dd class="col-sm-8">@Model.Phone</dd>
-        }
-        @if (!string.IsNullOrWhiteSpace(Model.Address))
-        {
-            <dt class="col-sm-4">Địa chỉ</dt>
-            <dd class="col-sm-8">@Model.Address</dd>
-        }
-        @if (Model.RegisteredAt.HasValue)
-        {
-            <dt class="col-sm-4">Ngày đăng ký</dt>
-            <dd class="col-sm-8">@Model.RegisteredAt.Value.ToString("dd/MM/yyyy")</dd>
-        }
-    </dl>
-</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

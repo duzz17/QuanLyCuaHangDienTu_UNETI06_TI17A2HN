@@ -1,12 +1,15 @@
+// Họ và tên: Ngô Khánh Quốc Huy - MSSV: 23103100313
+// Module 3: M3-06 Khách hàng đăng nhập xem/sửa trường thông tin cá nhân được phép; Validation họ tên, email, điện thoại, ngày sinh
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Filters;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
+using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.ViewModels;
 
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Controllers;
 
-[AdminOnly]
 public class KhachHangController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -16,7 +19,8 @@ public class KhachHangController : Controller
         _context = context;
     }
 
-    // GET: /KhachHang (Xem danh sách khách hàng & tra cứu)
+    // GET: /KhachHang (Xem danh sách khách hàng & tra cứu - Admin)
+    [AdminOnly]
     [HttpGet]
     public async Task<IActionResult> Index(string? tuKhoa)
     {
@@ -40,7 +44,8 @@ public class KhachHangController : Controller
         return View(danhSach);
     }
 
-    // GET: /KhachHang/Details/5 (Xem chi tiết khách hàng & Lịch sử đơn hàng)
+    // GET: /KhachHang/Details/5 (Xem chi tiết khách hàng & Lịch sử đơn hàng - Admin)
+    [AdminOnly]
     [HttpGet]
     public async Task<IActionResult> Details(int? id)
     {
@@ -65,14 +70,16 @@ public class KhachHangController : Controller
         return View(khachHang);
     }
 
-    // GET: /KhachHang/Create (Form thêm khách hàng mới)
+    // GET: /KhachHang/Create (Form thêm khách hàng mới - Admin)
+    [AdminOnly]
     [HttpGet]
     public IActionResult Create()
     {
         return View(new KhachHang());
     }
 
-    // POST: /KhachHang/Create (Lưu thông tin khách hàng)
+    // POST: /KhachHang/Create (Lưu thông tin khách hàng - Admin)
+    [AdminOnly]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("HoTen,Email,SoDienThoai,DiaChi")] KhachHang khachHang)
@@ -105,7 +112,8 @@ public class KhachHangController : Controller
         return View(khachHang);
     }
 
-    // GET: /KhachHang/Edit/5 (Form chỉnh sửa thông tin khách hàng)
+    // GET: /KhachHang/Edit/5 (Form chỉnh sửa thông tin khách hàng - Admin)
+    [AdminOnly]
     [HttpGet]
     public async Task<IActionResult> Edit(int? id)
     {
@@ -123,7 +131,8 @@ public class KhachHangController : Controller
         return View(khachHang);
     }
 
-    // POST: /KhachHang/Edit/5 (Cập nhật thông tin khách hàng)
+    // POST: /KhachHang/Edit/5 (Cập nhật thông tin khách hàng - Admin)
+    [AdminOnly]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("MaKhachHang,HoTen,Email,SoDienThoai,DiaChi,NgayDangKy")] KhachHang khachHang)
@@ -171,7 +180,8 @@ public class KhachHangController : Controller
         return View(khachHang);
     }
 
-    // GET: /KhachHang/Delete/5 (Trang xác nhận xóa khách hàng)
+    // GET: /KhachHang/Delete/5 (Trang xác nhận xóa khách hàng - Admin)
+    [AdminOnly]
     [HttpGet]
     public async Task<IActionResult> Delete(int? id)
     {
@@ -197,7 +207,8 @@ public class KhachHangController : Controller
         return View(khachHang);
     }
 
-    // POST: /KhachHang/Delete/5 (Thực hiện xóa)
+    // POST: /KhachHang/Delete/5 (Thực hiện xóa - Admin)
+    [AdminOnly]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
@@ -222,6 +233,153 @@ public class KhachHangController : Controller
 
         TempData["ThongBao"] = $"Xóa khách hàng '{khachHang.HoTen}' thành công!";
         return RedirectToAction(nameof(Index));
+    }
+
+    // =========================================================================
+    // M3-06: Khách hàng đăng nhập xem / sửa hồ sơ cá nhân & Validation
+    // =========================================================================
+
+    // GET: /KhachHang/HoSo
+    [HttpGet]
+    public async Task<IActionResult> HoSo()
+    {
+        var vaiTro = HttpContext.Session.GetString("VaiTro");
+        var maKhachHangSession = HttpContext.Session.GetInt32("MaKhachHang");
+        var maTaiKhoanSession = HttpContext.Session.GetInt32("MaTaiKhoan");
+
+        if (string.IsNullOrEmpty(vaiTro) || (!maKhachHangSession.HasValue && !maTaiKhoanSession.HasValue))
+        {
+            TempData["Loi"] = "Vui lòng đăng nhập để xem thông tin hồ sơ cá nhân.";
+            return RedirectToAction("Login", "TaiKhoan", new { returnUrl = Url.Action("HoSo", "KhachHang") });
+        }
+
+        KhachHang? khachHang = null;
+        if (maKhachHangSession.HasValue)
+        {
+            khachHang = await _context.KhachHangs
+                .Include(k => k.TaiKhoan)
+                .Include(k => k.DonHangs)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(k => k.MaKhachHang == maKhachHangSession.Value);
+        }
+        else if (maTaiKhoanSession.HasValue)
+        {
+            var taiKhoan = await _context.TaiKhoans
+                .Include(t => t.KhachHang)
+                    .ThenInclude(k => k.DonHangs)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.MaTaiKhoan == maTaiKhoanSession.Value);
+            khachHang = taiKhoan?.KhachHang;
+        }
+
+        if (khachHang == null)
+        {
+            TempData["Loi"] = "Không tìm thấy thông tin hồ sơ khách hàng liên kết.";
+            return RedirectToAction("Index", "Home");
+        }
+
+        if (khachHang.TaiKhoan != null && !khachHang.TaiKhoan.TrangThai)
+        {
+            TempData["Loi"] = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.";
+            return RedirectToAction("Logout", "TaiKhoan");
+        }
+
+        var donHangsHopLe = khachHang.DonHangs?.Where(d => d.TrangThai != "DaHuy").ToList();
+        var model = new CustomerProfileViewModel
+        {
+            MaKhachHang = khachHang.MaKhachHang,
+            DisplayName = khachHang.HoTen,
+            Username = khachHang.TaiKhoan?.TenDangNhap ?? (HttpContext.Session.GetString("TenDangNhap") ?? string.Empty),
+            Role = khachHang.TaiKhoan?.VaiTro ?? (HttpContext.Session.GetString("VaiTro") ?? "KhachHang"),
+            Email = khachHang.Email,
+            Phone = khachHang.SoDienThoai,
+            Address = khachHang.DiaChi,
+            DateOfBirth = khachHang.NgaySinh,
+            RegisteredAt = khachHang.NgayDangKy,
+            SoLuongDonHang = khachHang.DonHangs?.Count ?? 0,
+            TongChiTieu = donHangsHopLe?.Sum(d => d.TongTien) ?? 0
+        };
+
+        return View(model);
+    }
+
+    // POST: /KhachHang/HoSo
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> HoSo(CustomerProfileViewModel model)
+    {
+        var vaiTro = HttpContext.Session.GetString("VaiTro");
+        var maKhachHangSession = HttpContext.Session.GetInt32("MaKhachHang");
+
+        if (string.IsNullOrEmpty(vaiTro) || !maKhachHangSession.HasValue)
+        {
+            TempData["Loi"] = "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.";
+            return RedirectToAction("Login", "TaiKhoan");
+        }
+
+        // Đảm bảo người dùng chỉ sửa hồ sơ của chính mình
+        if (model.MaKhachHang != maKhachHangSession.Value)
+        {
+            TempData["Loi"] = "Bạn không có quyền chỉnh sửa hồ sơ này.";
+            return RedirectToAction("Index", "Home");
+        }
+
+        // Kiểm tra validation ngày sinh: không được là ngày trong tương lai
+        if (model.DateOfBirth.HasValue && model.DateOfBirth.Value.Date > DateTime.Today)
+        {
+            ModelState.AddModelError(nameof(model.DateOfBirth), "Ngày sinh không được vượt quá ngày hiện tại.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            // Nạp lại các trường chỉ đọc để hiển thị giao diện đúng
+            var currentKh = await _context.KhachHangs
+                .Include(k => k.TaiKhoan)
+                .Include(k => k.DonHangs)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(k => k.MaKhachHang == model.MaKhachHang);
+
+            if (currentKh != null)
+            {
+                model.Username = currentKh.TaiKhoan?.TenDangNhap ?? string.Empty;
+                model.Role = currentKh.TaiKhoan?.VaiTro ?? "KhachHang";
+                model.RegisteredAt = currentKh.NgayDangKy;
+                model.SoLuongDonHang = currentKh.DonHangs?.Count ?? 0;
+                model.TongChiTieu = currentKh.DonHangs?.Where(d => d.TrangThai != "DaHuy").Sum(d => d.TongTien) ?? 0;
+            }
+            return View(model);
+        }
+
+        var khachHang = await _context.KhachHangs
+            .Include(k => k.TaiKhoan)
+            .FirstOrDefaultAsync(k => k.MaKhachHang == model.MaKhachHang);
+
+        if (khachHang == null)
+        {
+            return NotFound();
+        }
+
+        if (khachHang.TaiKhoan != null && !khachHang.TaiKhoan.TrangThai)
+        {
+            TempData["Loi"] = "Tài khoản của bạn đã bị khóa.";
+            return RedirectToAction("Logout", "TaiKhoan");
+        }
+
+        // Cập nhật các trường được phép sửa
+        khachHang.HoTen = model.DisplayName.Trim();
+        khachHang.Email = model.Email?.Trim() ?? string.Empty;
+        khachHang.SoDienThoai = model.Phone?.Trim() ?? string.Empty;
+        khachHang.DiaChi = model.Address?.Trim() ?? string.Empty;
+        khachHang.NgaySinh = model.DateOfBirth;
+
+        _context.KhachHangs.Update(khachHang);
+        await _context.SaveChangesAsync();
+
+        // Đồng bộ họ tên mới vào Session
+        HttpContext.Session.SetString("HoTen", khachHang.HoTen);
+
+        TempData["ThongBao"] = "Cập nhật thông tin cá nhân thành công!";
+        return RedirectToAction(nameof(HoSo));
     }
 
     private async Task<bool> KhachHangExists(int id)
