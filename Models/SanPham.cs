@@ -19,6 +19,11 @@ public class SanPham
     [StringLength(100, ErrorMessage = "Thương hiệu tối đa 100 ký tự")]
     public string ThuongHieu { get; set; } = string.Empty;
 
+    [Display(Name = "Xuất xứ")]
+    [Required(ErrorMessage = "Xuất xứ không được để trống")]
+    [StringLength(100, ErrorMessage = "Xuất xứ tối đa 100 ký tự")]
+    public string XuatXu { get; set; } = string.Empty;
+
     [Display(Name = "Mô tả")]
     public string MoTa { get; set; } = string.Empty;
 
@@ -38,7 +43,8 @@ public class SanPham
     public int ThoiGianBaoHanh { get; set; } = 12;
 
     [Display(Name = "Trạng thái kinh doanh")]
-    public bool TrangThai { get; set; } = true;
+    [EnumDataType(typeof(TrangThaiSanPham), ErrorMessage = "Trạng thái sản phẩm không hợp lệ")]
+    public TrangThaiSanPham TrangThai { get; set; } = TrangThaiSanPham.DangKinhDoanh;
 
     [Display(Name = "Hình ảnh")]
     public string HinhAnh { get; set; } = string.Empty;

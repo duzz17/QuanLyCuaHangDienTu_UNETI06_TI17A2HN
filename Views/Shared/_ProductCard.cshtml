@@ -1,14 +1,20 @@
 @model SanPham
 @using System.Globalization
 @{
-    var available = Model.TrangThai && Model.SoLuong > 0;
+    var available = Model.TrangThai == TrangThaiSanPham.DangKinhDoanh && Model.SoLuong > 0;
+    var unavailableText = Model.TrangThai switch
+    {
+        TrangThaiSanPham.TamNgung => "Tạm ngừng bán",
+        TrangThaiSanPham.NgungKinhDoanh => "Ngừng kinh doanh",
+        _ => "Tạm hết hàng"
+    };
     var image = string.IsNullOrWhiteSpace(Model.HinhAnh) ? Url.Content("~/images/product-placeholder.svg") : Model.HinhAnh;
 }
 <article class="product-card">
     <a class="product-image" asp-controller="SanPham" asp-action="Details" asp-route-id="@Model.MaSanPham" asp-route-view="store">
         <img src="@image" alt="@Model.TenSanPham" loading="lazy" data-product-image />
         <span class="product-brand">@Model.ThuongHieu</span>
-        @if (!available) { <span class="product-stock sold-out">Tạm hết hàng</span> }
+        @if (!available) { <span class="product-stock sold-out">@unavailableText</span> }
     </a>
     <div class="product-card-content">
         <span class="product-category">@Model.LoaiSanPham?.TenLoai</span>

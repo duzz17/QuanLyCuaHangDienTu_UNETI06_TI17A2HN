@@ -1,3 +1,5 @@
+@* Họ và tên: Phạm Văn Cường - MSSV: 23103100094
+   Nội dung thực hiện: Hiển thị, lọc và cập nhật sản phẩm theo ba trạng thái kinh doanh. *@
 @model IEnumerable<SanPham>
 @using System.Globalization
 @{
@@ -7,6 +9,13 @@
     var vi = CultureInfo.GetCultureInfo("vi-VN");
     int currentPage = ViewBag.CurrentPage;
     int totalPages = ViewBag.TotalPages;
+    string StatusText(TrangThaiSanPham status) => status switch
+    {
+        TrangThaiSanPham.DangKinhDoanh => "Đang kinh doanh",
+        TrangThaiSanPham.TamNgung => "Tạm ngừng",
+        _ => "Ngừng kinh doanh"
+    };
+    string StatusClass(TrangThaiSanPham status) => status == TrangThaiSanPham.DangKinhDoanh ? "completed" : "neutral";
     var routes = new Dictionary<string, string>
     {
         ["view"] = isAdmin ? "admin" : "store",
@@ -94,7 +103,7 @@
 <img src="@(string.IsNullOrWhiteSpace(product.HinhAnh) ? Url.Content("~/images/product-placeholder.svg") : product.HinhAnh)" alt="" data-product-name="@product.TenSanPham" data-product-image/>
 <div>
 <a asp-action="Details" asp-route-id="@product.MaSanPham">@product.TenSanPham</a>
-<small>#SP@(product.MaSanPham.ToString("D4")) · @product.ThuongHieu · BH @product.ThoiGianBaoHanh tháng</small>
+<small>#SP@(product.MaSanPham.ToString("D4")) · @product.ThuongHieu · @product.XuatXu · BH @product.ThoiGianBaoHanh tháng</small>
 </div>
 </div>
 </td>
@@ -104,12 +113,19 @@
 <span class="stock-pill @(product.SoLuong <= 5 ? "low" : "")">@product.SoLuong</span>
 </td>
 <td>
-<form asp-action="DoiTrangThai" method="post">
+<div class="d-flex flex-column align-items-start gap-2">
+<span class="status-badge @StatusClass(product.TrangThai)">
+<span></span>@StatusText(product.TrangThai)</span>
+<form asp-action="DoiTrangThai" method="post" class="d-flex align-items-center gap-1">
 <input type="hidden" name="id" value="@product.MaSanPham"/>
-<button type="submit" class="status-badge @(product.TrangThai ? "completed" : "neutral")" title="Đổi trạng thái kinh doanh">
-<span>
-</span>@(product.TrangThai ? "Đang bán" : "Ngừng bán")</button>
+<select name="trangThai" class="form-select form-select-sm" aria-label="Trạng thái của @product.TenSanPham">
+<option value="@TrangThaiSanPham.DangKinhDoanh" selected="@(product.TrangThai == TrangThaiSanPham.DangKinhDoanh)">Đang kinh doanh</option>
+<option value="@TrangThaiSanPham.TamNgung" selected="@(product.TrangThai == TrangThaiSanPham.TamNgung)">Tạm ngừng</option>
+<option value="@TrangThaiSanPham.NgungKinhDoanh" selected="@(product.TrangThai == TrangThaiSanPham.NgungKinhDoanh)">Ngừng kinh doanh</option>
+</select>
+<button type="submit" class="btn btn-sm btn-outline-secondary">Lưu</button>
 </form>
+</div>
 </td>
 <td>
 <div class="table-actions">

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Filters;
+using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.ViewModels;
 
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Controllers;
@@ -23,7 +24,8 @@ public class DashboardController(ApplicationDbContext context) : Controller
         var statusCounts = await orders.GroupBy(d => d.TrangThai)
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToDictionaryAsync(g => g.Status, g => g.Count);
-        var products = context.SanPhams.AsNoTracking().Where(s => s.TrangThai);
+        var products = context.SanPhams.AsNoTracking()
+            .Where(s => s.TrangThai == TrangThaiSanPham.DangKinhDoanh);
         var lowStock = products.Where(s => s.SoLuong <= 5);
         var bestSellers = await context.ChiTietDonHangs.AsNoTracking()
             .Where(c => c.DonHang.TrangThai == "DaGiao"

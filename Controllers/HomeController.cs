@@ -18,10 +18,11 @@ public class HomeController(ApplicationDbContext context) : Controller
         return View(new StorefrontViewModel
         {
             Products = await context.SanPhams.AsNoTracking().Include(s => s.LoaiSanPham)
-                .Where(s => s.TrangThai).OrderByDescending(s => s.NgayNhap)
+                .Where(s => s.TrangThai == TrangThaiSanPham.DangKinhDoanh).OrderByDescending(s => s.NgayNhap)
                 .ThenByDescending(s => s.MaSanPham).Take(8).ToListAsync(),
             Categories = await context.LoaiSanPhams.AsNoTracking().OrderBy(l => l.MaLoai)
-                .Select(l => new StoreCategory(l.MaLoai, l.TenLoai, l.SanPhams.Count(s => s.TrangThai)))
+                .Select(l => new StoreCategory(l.MaLoai, l.TenLoai,
+                    l.SanPhams.Count(s => s.TrangThai == TrangThaiSanPham.DangKinhDoanh)))
                 .ToListAsync()
         });
     }

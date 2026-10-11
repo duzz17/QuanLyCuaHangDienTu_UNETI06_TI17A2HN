@@ -1,3 +1,5 @@
+// Họ và tên: Phạm Văn Cường - MSSV: 23103100094
+// Nội dung thực hiện: CRUD, tìm kiếm, lọc, sắp xếp và phân trang sản phẩm (Module 2)
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +23,7 @@ public class SanPhamController : Controller
         string? tuKhoa,         // M2-07: Tìm kiếm theo tên hoặc thương hiệu
         int? maLoai,            // M2-08: Lọc theo loại sản phẩm
         string? thuongHieu,     // M2-08: Lọc theo thương hiệu
-        bool? trangThai,        // M2-08: Lọc theo trạng thái
+        TrangThaiSanPham? trangThai, // M2-08: Lọc theo trạng thái
         decimal? giaTu,         // M2-08: Khoảng giá từ
         decimal? giaDen,        // M2-08: Khoảng giá đến
         string? sapXep,         // M2-09: Sắp xếp
@@ -29,7 +31,17 @@ public class SanPhamController : Controller
         int pageSize = 6        // M2-10: Số sản phẩm mỗi trang (mặc định 6)
     )
     {
-        pageSize = Math.Clamp(pageSize, 1, 48);
+        int[] pageSizes = [6, 12, 24, 48];
+        if (!pageSizes.Contains(pageSize)) pageSize = 6;
+        if (maLoai is <= 0) maLoai = null;
+        if (trangThai.HasValue && !Enum.IsDefined(trangThai.Value)) trangThai = null;
+        if (giaTu is < 0) giaTu = 0;
+        if (giaDen is < 0) giaDen = 0;
+        if (giaTu.HasValue && giaDen.HasValue && giaTu > giaDen)
+            (giaTu, giaDen) = (giaDen, giaTu);
+        tuKhoa = string.IsNullOrWhiteSpace(tuKhoa) ? null : tuKhoa.Trim();
+        thuongHieu = string.IsNullOrWhiteSpace(thuongHieu) ? null : thuongHieu.Trim();
+
         var isManagement = HttpContext.Session.GetString("VaiTro") == "Admin"
             && HttpContext.Request.Query["view"] != "store";
         ViewData["Storefront"] = !isManagement;
@@ -38,12 +50,12 @@ public class SanPhamController : Controller
             .Include(s => s.LoaiSanPham);
 
         if (!isManagement)
-            query = query.Where(s => s.TrangThai);
+            query = query.Where(s => s.TrangThai == TrangThaiSanPham.DangKinhDoanh);
 
         // M2-07: Tìm kiếm theo tên hoặc thương hiệu
         if (!string.IsNullOrWhiteSpace(tuKhoa))
         {
-            var kw = tuKhoa.Trim();
+            var kw = tuKhoa;
             query = query.Where(s => EF.Functions.Like(s.TenSanPham, $"%{kw}%")
                                   || EF.Functions.Like(s.ThuongHieu, $"%{kw}%"));
         }
@@ -59,7 +71,7 @@ public class SanPhamController : Controller
             query = query.Where(s => s.ThuongHieu == thuongHieu);
         }
 
-        if (trangThai.HasValue)
+        if (trangThai.HasValue && Enum.IsDefined(trangThai.Value))
         {
             query = query.Where(s => s.TrangThai == trangThai.Value);
         }
@@ -77,12 +89,12 @@ public class SanPhamController : Controller
         // M2-09: Sắp xếp bằng LINQ
         query = sapXep switch
         {
-            "ten_desc" => query.OrderByDescending(s => s.TenSanPham),
-            "gia_asc" => query.OrderBy(s => s.Gia),
-            "gia_desc" => query.OrderByDescending(s => s.Gia),
-            "ton_asc" => query.OrderBy(s => s.SoLuong),
-            "ton_desc" => query.OrderByDescending(s => s.SoLuong),
-            _ => query.OrderBy(s => s.TenSanPham) // Mặc định: Tên A - Z
+            "ten_desc" => query.OrderByDescending(s => s.TenSanPham).ThenBy(s => s.MaSanPham),
+            "gia_asc" => query.OrderBy(s => s.Gia).ThenBy(s => s.MaSanPham),
+            "gia_desc" => query.OrderByDescending(s => s.Gia).ThenBy(s => s.MaSanPham),
+            "ton_asc" => query.OrderBy(s => s.SoLuong).ThenBy(s => s.MaSanPham),
+            "ton_desc" => query.OrderByDescending(s => s.SoLuong).ThenBy(s => s.MaSanPham),
+            _ => query.OrderBy(s => s.TenSanPham).ThenBy(s => s.MaSanPham)
         };
 
         // M2-10: Tính toán phân trang EF Core
@@ -101,11 +113,16 @@ public class SanPhamController : Controller
             .ToListAsync();
 
         // Chuẩn bị dữ liệu danh mục & thương hiệu cho Form lọc
-        ViewBag.MaLoaiList = await CreateLoaiSanPhamSelectListAsync(maLoai);
-        ViewBag.ThuongHieuList = await _context.SanPhams
+        ViewBag.MaLoaiList = await CreateLoaiSanPhamSelectListAsync(maLoai, isManagement);
+        var thuongHieuQuery = _context.SanPhams.AsNoTracking();
+        if (!isManagement)
+            thuongHieuQuery = thuongHieuQuery
+                .Where(s => s.TrangThai == TrangThaiSanPham.DangKinhDoanh);
+        ViewBag.ThuongHieuList = await thuongHieuQuery
             .Select(s => s.ThuongHieu)
             .Where(th => !string.IsNullOrEmpty(th))
             .Distinct()
+            .OrderBy(th => th)
             .ToListAsync();
 
         // M2-11: Giữ lại toàn bộ điều kiện lọc, tìm kiếm, sắp xếp
@@ -138,10 +155,17 @@ public class SanPhamController : Controller
             return NotFound();
         }
 
-        var sanPham = await _context.SanPhams
+        var isManagement = HttpContext.Session.GetString("VaiTro") == "Admin"
+            && HttpContext.Request.Query["view"] != "store";
+        var query = _context.SanPhams
             .AsNoTracking()
             .Include(s => s.LoaiSanPham)
-            .FirstOrDefaultAsync(s => s.MaSanPham == id);
+            .AsQueryable();
+
+        if (!isManagement)
+            query = query.Where(s => s.TrangThai == TrangThaiSanPham.DangKinhDoanh);
+
+        var sanPham = await query.FirstOrDefaultAsync(s => s.MaSanPham == id);
 
         if (sanPham is null)
         {
@@ -181,10 +205,13 @@ public class SanPhamController : Controller
         return View(sanPham);
     }
 
-    private async Task<SelectList> CreateLoaiSanPhamSelectListAsync(int? selectedValue = null)
+    private async Task<SelectList> CreateLoaiSanPhamSelectListAsync(
+        int? selectedValue = null, bool includeInactive = false)
     {
         var loaiSanPhams = await _context.LoaiSanPhams
             .AsNoTracking()
+            .Where(l => includeInactive || l.TrangThai || l.MaLoai == selectedValue)
+            .OrderBy(l => l.TenLoai)
             .ToListAsync();
 
         return new SelectList(loaiSanPhams, "MaLoai", "TenLoai", selectedValue);
@@ -193,34 +220,20 @@ public class SanPhamController : Controller
     [HttpPost]
     [AdminOnly]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(SanPham sanPham)
+    public async Task<IActionResult> Create(
+        [Bind("TenSanPham,ThuongHieu,XuatXu,MoTa,Gia,SoLuong,ThoiGianBaoHanh,TrangThai,HinhAnh,NgayNhap,MaLoai")]
+        SanPham sanPham)
     {
         // Loại bỏ validation đối với navigation property
         ModelState.Remove(nameof(sanPham.LoaiSanPham));
 
-        // M2-06 & M2-12: Kiểm tra các quy tắc nghiệp vụ và thông báo lỗi Validation tiếng Việt
-        if (sanPham.Gia <= 0)
-        {
-            ModelState.AddModelError(nameof(sanPham.Gia), "Đơn giá sản phẩm phải lớn hơn 0 ₫.");
-        }
-        if (sanPham.SoLuong < 0)
-        {
-            ModelState.AddModelError(nameof(sanPham.SoLuong), "Số lượng tồn kho phải lớn hơn hoặc bằng 0.");
-        }
-        if (sanPham.ThoiGianBaoHanh < 0)
-        {
-            ModelState.AddModelError(nameof(sanPham.ThoiGianBaoHanh), "Thời gian bảo hành phải lớn hơn hoặc bằng 0 tháng.");
-        }
-        if (sanPham.MaLoai <= 0)
-        {
-            ModelState.AddModelError(nameof(sanPham.MaLoai), "Vui lòng chọn loại sản phẩm hợp lệ.");
-        }
+        await ValidateSanPhamAsync(sanPham);
 
         if (ModelState.IsValid)
         {
             _context.SanPhams.Add(sanPham);
             await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Thêm mới sản phẩm thành công!";
+            TempData["Success"] = "Thêm mới sản phẩm thành công!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -231,40 +244,41 @@ public class SanPhamController : Controller
     [HttpPost]
     [AdminOnly]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, SanPham sanPham)
+    public async Task<IActionResult> Edit(
+        int id,
+        [Bind("MaSanPham,TenSanPham,ThuongHieu,XuatXu,MoTa,Gia,SoLuong,ThoiGianBaoHanh,TrangThai,HinhAnh,NgayNhap,MaLoai")]
+        SanPham sanPham)
     {
         if (id != sanPham.MaSanPham)
         {
             return NotFound();
         }
 
+        var sanPhamHienTai = await _context.SanPhams.FirstOrDefaultAsync(s => s.MaSanPham == id);
+        if (sanPhamHienTai is null)
+            return NotFound();
+
         ModelState.Remove(nameof(sanPham.LoaiSanPham));
 
-        // M2-06 & M2-12: Kiểm tra các quy tắc nghiệp vụ và thông báo lỗi Validation tiếng Việt
-        if (sanPham.Gia <= 0)
-        {
-            ModelState.AddModelError(nameof(sanPham.Gia), "Đơn giá sản phẩm phải lớn hơn 0 ₫.");
-        }
-        if (sanPham.SoLuong < 0)
-        {
-            ModelState.AddModelError(nameof(sanPham.SoLuong), "Số lượng tồn kho phải lớn hơn hoặc bằng 0.");
-        }
-        if (sanPham.ThoiGianBaoHanh < 0)
-        {
-            ModelState.AddModelError(nameof(sanPham.ThoiGianBaoHanh), "Thời gian bảo hành phải lớn hơn hoặc bằng 0 tháng.");
-        }
-        if (sanPham.MaLoai <= 0)
-        {
-            ModelState.AddModelError(nameof(sanPham.MaLoai), "Vui lòng chọn loại sản phẩm hợp lệ.");
-        }
+        await ValidateSanPhamAsync(sanPham, sanPhamHienTai.MaLoai);
 
         if (ModelState.IsValid)
         {
             try
             {
-                _context.Update(sanPham);
+                sanPhamHienTai.TenSanPham = sanPham.TenSanPham;
+                sanPhamHienTai.ThuongHieu = sanPham.ThuongHieu;
+                sanPhamHienTai.XuatXu = sanPham.XuatXu;
+                sanPhamHienTai.MoTa = sanPham.MoTa;
+                sanPhamHienTai.Gia = sanPham.Gia;
+                sanPhamHienTai.SoLuong = sanPham.SoLuong;
+                sanPhamHienTai.ThoiGianBaoHanh = sanPham.ThoiGianBaoHanh;
+                sanPhamHienTai.TrangThai = sanPham.TrangThai;
+                sanPhamHienTai.HinhAnh = sanPham.HinhAnh;
+                sanPhamHienTai.NgayNhap = sanPham.NgayNhap;
+                sanPhamHienTai.MaLoai = sanPham.MaLoai;
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Cập nhật sản phẩm thành công!";
+                TempData["Success"] = "Cập nhật sản phẩm thành công!";
                 return RedirectToAction(nameof(Index));
             }
             catch (DbUpdateConcurrencyException)
@@ -281,16 +295,51 @@ public class SanPhamController : Controller
     [HttpPost]
     [AdminOnly]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DoiTrangThai(int id)
+    public async Task<IActionResult> DoiTrangThai(int id, TrangThaiSanPham? trangThai)
     {
         var sanPham = await _context.SanPhams.FindAsync(id);
         if (sanPham == null) return NotFound();
 
-        sanPham.TrangThai = !sanPham.TrangThai;
+        if (!trangThai.HasValue || !Enum.IsDefined(trangThai.Value))
+        {
+            TempData["Error"] = "Trạng thái sản phẩm không hợp lệ.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        sanPham.TrangThai = trangThai.Value;
         await _context.SaveChangesAsync();
-        TempData["SuccessMessage"] = $"Đã cập nhật trạng thái sản phẩm sang: {(sanPham.TrangThai ? "Đang kinh doanh" : "Ngừng kinh doanh")}";
+        TempData["Success"] = $"Đã cập nhật trạng thái sản phẩm sang: {GetTrangThaiText(sanPham.TrangThai)}";
         return RedirectToAction(nameof(Index));
     }
+
+    private async Task ValidateSanPhamAsync(SanPham sanPham, int? currentMaLoai = null)
+    {
+        sanPham.TenSanPham = sanPham.TenSanPham?.Trim() ?? string.Empty;
+        sanPham.ThuongHieu = sanPham.ThuongHieu?.Trim() ?? string.Empty;
+        sanPham.XuatXu = sanPham.XuatXu?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(sanPham.XuatXu))
+            ModelState.AddModelError(nameof(sanPham.XuatXu), "Xuất xứ không được để trống.");
+        if (sanPham.Gia <= 0)
+            ModelState.AddModelError(nameof(sanPham.Gia), "Đơn giá sản phẩm phải lớn hơn 0 ₫.");
+        if (sanPham.SoLuong < 0)
+            ModelState.AddModelError(nameof(sanPham.SoLuong), "Số lượng tồn kho phải lớn hơn hoặc bằng 0.");
+        if (sanPham.ThoiGianBaoHanh is < 0 or > 120)
+            ModelState.AddModelError(nameof(sanPham.ThoiGianBaoHanh), "Thời gian bảo hành phải từ 0 đến 120 tháng.");
+        if (!Enum.IsDefined(sanPham.TrangThai))
+            ModelState.AddModelError(nameof(sanPham.TrangThai), "Trạng thái sản phẩm không hợp lệ.");
+        if (sanPham.MaLoai <= 0 || !await _context.LoaiSanPhams.AnyAsync(l =>
+                l.MaLoai == sanPham.MaLoai && (l.TrangThai || l.MaLoai == currentMaLoai)))
+            ModelState.AddModelError(nameof(sanPham.MaLoai), "Vui lòng chọn loại sản phẩm hợp lệ.");
+    }
+
+    private static string GetTrangThaiText(TrangThaiSanPham trangThai) => trangThai switch
+    {
+        TrangThaiSanPham.DangKinhDoanh => "Đang kinh doanh",
+        TrangThaiSanPham.TamNgung => "Tạm ngừng",
+        TrangThaiSanPham.NgungKinhDoanh => "Ngừng kinh doanh",
+        _ => "Không xác định"
+    };
     [HttpPost]
     [AdminOnly]
     [ValidateAntiForgeryToken]
@@ -305,13 +354,13 @@ public class SanPhamController : Controller
         // Không xóa nếu sản phẩm đã phát sinh chi tiết đơn hàng
         if (sanPham.ChiTietDonHangs.Any())
         {
-            TempData["ErrorMessage"] = "Không thể xóa sản phẩm đã có trong đơn hàng! Hãy chuyển trạng thái sang Ngừng kinh doanh.";
+            TempData["Error"] = "Không thể xóa sản phẩm đã có trong đơn hàng! Hãy chuyển trạng thái sang Ngừng kinh doanh.";
             return RedirectToAction(nameof(Index));
         }
 
         _context.SanPhams.Remove(sanPham);
         await _context.SaveChangesAsync();
-        TempData["SuccessMessage"] = "Xóa sản phẩm thành công!";
+        TempData["Success"] = "Xóa sản phẩm thành công!";
         return RedirectToAction(nameof(Index));
     }
 }

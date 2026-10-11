@@ -197,10 +197,13 @@ namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<bool>("TrangThai")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
+                    b.Property<int>("TrangThai")
+                        .HasColumnType("int");
+
+                    b.Property<string>("XuatXu")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("MaSanPham");
 
@@ -212,7 +215,11 @@ namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Migrations
 
                             t.HasCheckConstraint("CK_SanPhams_SoLuong", "[SoLuong] >= 0");
 
-                            t.HasCheckConstraint("CK_SanPhams_ThoiGianBaoHanh", "[ThoiGianBaoHanh] >= 0");
+                            t.HasCheckConstraint("CK_SanPhams_ThoiGianBaoHanh", "[ThoiGianBaoHanh] BETWEEN 0 AND 120");
+
+                            t.HasCheckConstraint("CK_SanPhams_TrangThai", "[TrangThai] IN (0, 1, 2)");
+
+                            t.HasCheckConstraint("CK_SanPhams_XuatXu", "LEN(LTRIM(RTRIM([XuatXu]))) > 0");
                         });
                 });
 

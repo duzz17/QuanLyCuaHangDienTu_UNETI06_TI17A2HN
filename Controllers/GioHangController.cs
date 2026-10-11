@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
+using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.ViewModels;
 
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Controllers;
@@ -61,7 +62,7 @@ public class GioHangController : Controller
         if (soLuong <= 0) soLuong = 1;
 
         var sanPham = await _context.SanPhams.FirstOrDefaultAsync(sp => sp.MaSanPham == maSanPham);
-        if (sanPham == null || !sanPham.TrangThai)
+        if (sanPham == null || sanPham.TrangThai != TrangThaiSanPham.DangKinhDoanh)
         {
             TempData["Loi"] = "Sản phẩm không tồn tại hoặc đã ngừng kinh doanh!";
             return RedirectToAction("Index", "SanPham");

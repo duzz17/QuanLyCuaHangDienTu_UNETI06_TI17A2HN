@@ -205,7 +205,7 @@ public class DonHangController : Controller
             foreach (var item in cart)
             {
                 var sanPham = await _context.SanPhams.FindAsync(item.MaSanPham);
-                if (sanPham == null || !sanPham.TrangThai)
+                if (sanPham == null || sanPham.TrangThai != TrangThaiSanPham.DangKinhDoanh)
                 {
                     await transaction.RollbackAsync();
                     TempData["Loi"] = $"Sản phẩm '{item.TenSanPham}' hiện không khả dụng.";

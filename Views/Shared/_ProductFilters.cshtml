@@ -6,6 +6,7 @@
     var brands = ViewBag.ThuongHieuList as IEnumerable<string> ?? Enumerable.Empty<string>();
     string Value(object? value) => Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";
     var sort = (string?)ViewBag.CurrentSapXep ?? "";
+    TrangThaiSanPham? currentStatus = ViewBag.CurrentTrangThai is TrangThaiSanPham status ? status : null;
 }
 <form asp-controller="SanPham" asp-action="Index" method="get" class="product-filter-form">
     <input type="hidden" name="view" value="@(Model ? "admin" : "store")" />
@@ -15,11 +16,11 @@
     <div class="filter-field"><label for="filter-min">Giá từ (₫)</label><input id="filter-min" class="form-control" type="number" min="0" name="giaTu" value="@Value(ViewBag.CurrentGiaTu)" /></div>
     <div class="filter-field"><label for="filter-max">Giá đến (₫)</label><input id="filter-max" class="form-control" type="number" min="0" name="giaDen" value="@Value(ViewBag.CurrentGiaDen)" /></div>
     @if (Model) {
-        <div class="filter-field"><label for="filter-status">Trạng thái</label><select id="filter-status" name="trangThai" class="form-select"><option value="">Tất cả trạng thái</option><option value="true" selected="@(ViewBag.CurrentTrangThai is true)">Đang kinh doanh</option><option value="false" selected="@(ViewBag.CurrentTrangThai is false)">Ngừng kinh doanh</option></select></div>
+        <div class="filter-field"><label for="filter-status">Trạng thái</label><select id="filter-status" name="trangThai" class="form-select"><option value="">Tất cả trạng thái</option><option value="@TrangThaiSanPham.DangKinhDoanh" selected="@(currentStatus == TrangThaiSanPham.DangKinhDoanh)">Đang kinh doanh</option><option value="@TrangThaiSanPham.TamNgung" selected="@(currentStatus == TrangThaiSanPham.TamNgung)">Tạm ngừng</option><option value="@TrangThaiSanPham.NgungKinhDoanh" selected="@(currentStatus == TrangThaiSanPham.NgungKinhDoanh)">Ngừng kinh doanh</option></select></div>
     }
     <div class="filter-field"><label for="filter-sort">Sắp xếp</label><select id="filter-sort" class="form-select" name="sapXep">
         <option value="" selected="@(sort == "")">Tên A – Z</option><option value="ten_desc" selected="@(sort == "ten_desc")">Tên Z – A</option><option value="gia_asc" selected="@(sort == "gia_asc")">Giá tăng dần</option><option value="gia_desc" selected="@(sort == "gia_desc")">Giá giảm dần</option>
-        @if (Model) { <option value="ton_asc" selected="@(sort == "ton_asc")">Tồn kho tăng dần</option><option value="ton_desc" selected="@(sort == "ton_desc")">Tồn kho giảm dần</option> }
+        <option value="ton_asc" selected="@(sort == "ton_asc")">Tồn kho tăng dần</option><option value="ton_desc" selected="@(sort == "ton_desc")">Tồn kho giảm dần</option>
     </select></div>
     <div class="filter-field"><label for="filter-size">Sản phẩm mỗi trang</label><select id="filter-size" class="form-select" name="pageSize">@foreach (var size in new[] { 6, 12, 24, 48 }) { <option value="@size" selected="@(size == (int?)ViewBag.PageSize)">@size sản phẩm</option> }</select></div>
     <div class="filter-actions"><button class="btn btn-primary" type="submit">Áp dụng bộ lọc</button><a class="btn btn-outline-secondary" asp-controller="SanPham" asp-action="Index" asp-route-view="@(Model ? "admin" : "store")">Xóa bộ lọc</a></div>

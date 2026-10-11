@@ -1,3 +1,5 @@
+@* Họ và tên: Phạm Văn Cường - MSSV: 23103100094
+   Nội dung thực hiện: Hiển thị đầy đủ xuất xứ, trạng thái kinh doanh và khả năng đặt mua sản phẩm. *@
 @model SanPham
 @using System.Globalization
 @{
@@ -5,7 +7,13 @@
     ViewData["Title"] = Model.TenSanPham;
     ViewData["Storefront"] = !management;
     var vi = CultureInfo.GetCultureInfo("vi-VN");
-    var available = Model.TrangThai && Model.SoLuong > 0;
+    var available = Model.TrangThai == TrangThaiSanPham.DangKinhDoanh && Model.SoLuong > 0;
+    var statusText = Model.TrangThai switch
+    {
+        TrangThaiSanPham.DangKinhDoanh => "Đang kinh doanh",
+        TrangThaiSanPham.TamNgung => "Tạm ngừng",
+        _ => "Ngừng kinh doanh"
+    };
 }
 <nav class="simple-breadcrumb" aria-label="Đường dẫn">
 <a asp-controller="Home" asp-action="Index" asp-route-view="@(management ? "admin" : "store")">Trang chủ</a>
@@ -24,9 +32,9 @@
 <span class="eyebrow">@(Model.LoaiSanPham?.TenLoai ?? "THIẾT BỊ ĐIỆN TỬ")</span>
 <h1>@Model.TenSanPham</h1>
 <div class="detail-stock">
-<span class="status-badge @(available ? "completed" : "neutral")">
+<span class="status-badge @(Model.TrangThai == TrangThaiSanPham.DangKinhDoanh ? "completed" : "neutral")">
 <span>
-</span>@(!Model.TrangThai ? "Ngừng kinh doanh" : Model.SoLuong <= 0 ? "Tạm hết hàng" : "Còn hàng")</span>@if (available) { <span class="text-muted">Còn @Model.SoLuong sản phẩm</span> }</div>
+</span>@statusText</span>@if (Model.TrangThai == TrangThaiSanPham.DangKinhDoanh) { <span class="text-muted">@(Model.SoLuong > 0 ? $"Còn {Model.SoLuong} sản phẩm" : "Tạm hết hàng")</span> }</div>
 <div class="detail-price">
 <small>Giá bán</small>
 <strong>@Model.Gia.ToString("N0", vi) <span>₫</span>
@@ -41,6 +49,10 @@
 <div>
 <dt>Danh mục</dt>
 <dd>@Model.LoaiSanPham?.TenLoai</dd>
+</div>
+<div>
+<dt>Xuất xứ</dt>
+<dd>@Model.XuatXu</dd>
 </div>
 <div>
 <dt>Bảo hành</dt>
