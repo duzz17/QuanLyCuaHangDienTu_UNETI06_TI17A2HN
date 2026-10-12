@@ -2,11 +2,13 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
+using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Filters;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.ViewModels;
 
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Controllers;
 
+[ProtectedRoute]
 public class GioHangController : Controller
 {
     private const string CART_KEY = "GIO_HANG_SESSION";
@@ -56,7 +58,7 @@ public class GioHangController : Controller
 
     // POST: /GioHang/ThemVaoGio (Thêm sản phẩm vào giỏ)
     [HttpPost]
-    [HttpGet]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> ThemVaoGio(int maSanPham, int soLuong = 1)
     {
         if (soLuong <= 0) soLuong = 1;

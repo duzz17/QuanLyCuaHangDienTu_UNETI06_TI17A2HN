@@ -16,6 +16,23 @@ public class AdminOnlyAttribute : ActionFilterAttribute
     public override void OnActionExecuting(ActionExecutingContext context)
     {
         var vaiTro = context.HttpContext.Session.GetString("VaiTro");
+        var actionName = context.ActionDescriptor.RouteValues["action"];
+
+        // Cho phép người dùng đã đăng nhập xem hồ sơ cá nhân dù không phải Admin.
+        if (string.Equals(actionName, "HoSo", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrEmpty(vaiTro))
+            {
+                context.Result = new RedirectToActionResult(
+                    "Login",
+                    "TaiKhoan",
+                    new { returnUrl = context.HttpContext.Request.Path + context.HttpContext.Request.QueryString });
+                return;
+            }
+
+            base.OnActionExecuting(context);
+            return;
+        }
 
         // Trường hợp 1: Chưa đăng nhập
         if (string.IsNullOrEmpty(vaiTro))

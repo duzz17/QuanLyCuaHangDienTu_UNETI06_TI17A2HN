@@ -1,3 +1,5 @@
+@charset "UTF-8";
+
 :root {
   --ink:#20352e;
   --muted:#758078;
@@ -11,7 +13,7 @@
   --bs-primary:#205b49;
   --bs-primary-rgb:32,91,73;
   --bs-body-color:#20352e;
-  --bs-body-font-family:"Segoe UI",Arial,sans-serif
+  --bs-body-font-family:system-ui,"Segoe UI","Noto Sans",Arial,sans-serif;
 }
 
 * {
@@ -20,6 +22,7 @@
 
 body {
   margin:0;
+  font-family:var(--bs-body-font-family);
   color:var(--ink);
   background:var(--canvas);
   font-size:14px;

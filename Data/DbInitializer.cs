@@ -7,11 +7,22 @@ namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 // Phối hợp cùng TV1 (Module 1 - M1-02: Quản lý loại sản phẩm và tài khoản)
 public static class DbInitializer
 {
+    public static async Task InitializeAsync(ApplicationDbContext context)
+    {
+        // Tự động tạo cơ sở dữ liệu và áp dụng các Migration mới nhất
+        await context.Database.MigrateAsync();
+        SeedData(context);
+    }
+
     public static void Initialize(ApplicationDbContext context)
     {
         // Tự động tạo cơ sở dữ liệu và áp dụng các Migration mới nhất
         context.Database.Migrate();
+        SeedData(context);
+    }
 
+    private static void SeedData(ApplicationDbContext context)
+    {
         // 1. Tạo Khách hàng và Tài khoản ban đầu nếu chưa có
         if (!context.TaiKhoans.Any())
         {

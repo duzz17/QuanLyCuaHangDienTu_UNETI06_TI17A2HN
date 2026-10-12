@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
+using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Filters;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.ViewModels;
 
@@ -105,6 +106,7 @@ public class DonHangController : Controller
 
     // GET: /DonHang/DatHang (Trang thông tin đặt hàng / Checkout)
     [HttpGet]
+    [ProtectedRoute]
     public async Task<IActionResult> DatHang()
     {
         var cart = GetCartFromSession();
@@ -156,6 +158,7 @@ public class DonHangController : Controller
     // POST: /DonHang/DatHang (Xử lý đặt hàng - Tính tiền phía Server & Lấy giá từ DB)
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [ProtectedRoute]
     public async Task<IActionResult> DatHang(DatHangViewModel model)
     {
         var cart = GetCartFromSession();
