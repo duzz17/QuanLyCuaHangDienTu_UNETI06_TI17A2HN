@@ -1,5 +1,5 @@
 // Họ và tên: Phạm Văn Cường - MSSV: 23103100094
-// Module 2: Quản lý và tra cứu sản phẩm
+// Nội dung thực hiện: Định nghĩa ba trạng thái kinh doanh của sản phẩm (Module 2)
 using System.ComponentModel.DataAnnotations;
 
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;

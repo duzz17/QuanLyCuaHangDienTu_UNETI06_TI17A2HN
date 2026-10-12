@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+// Họ và tên: Phạm Văn Cường - MSSV: 23103100094
+// Nội dung thực hiện: Kiểm thử thao tác dữ liệu sản phẩm (Module 2)
 using Microsoft.EntityFrameworkCore;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
 using Xunit;

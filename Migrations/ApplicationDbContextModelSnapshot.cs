@@ -169,14 +169,16 @@ namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Migrations
 
                     b.Property<string>("HinhAnh")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("MaLoai")
                         .HasColumnType("int");
 
                     b.Property<string>("MoTa")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime>("NgayNhap")
                         .HasColumnType("datetime2");
@@ -213,9 +215,15 @@ namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Migrations
                         {
                             t.HasCheckConstraint("CK_SanPhams_Gia", "[Gia] > 0");
 
+                            t.HasCheckConstraint("CK_SanPhams_NgayNhap", "[NgayNhap] >= '2000-01-01'");
+
                             t.HasCheckConstraint("CK_SanPhams_SoLuong", "[SoLuong] >= 0");
 
+                            t.HasCheckConstraint("CK_SanPhams_TenSanPham", "LEN(LTRIM(RTRIM([TenSanPham]))) > 0");
+
                             t.HasCheckConstraint("CK_SanPhams_ThoiGianBaoHanh", "[ThoiGianBaoHanh] BETWEEN 0 AND 120");
+
+                            t.HasCheckConstraint("CK_SanPhams_ThuongHieu", "LEN(LTRIM(RTRIM([ThuongHieu]))) > 0");
 
                             t.HasCheckConstraint("CK_SanPhams_TrangThai", "[TrangThai] IN (0, 1, 2)");
 

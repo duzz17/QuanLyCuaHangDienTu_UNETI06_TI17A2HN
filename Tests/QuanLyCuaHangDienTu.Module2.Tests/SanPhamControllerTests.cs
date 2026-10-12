@@ -1,3 +1,5 @@
+// Họ và tên: Phạm Văn Cường - MSSV: 23103100094
+// Nội dung thực hiện: Kiểm thử CRUD, tìm kiếm, lọc, sắp xếp và phân trang sản phẩm (Module 2)
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Controllers;
@@ -322,6 +324,97 @@ public class SanPhamControllerTests
     }
 
     [Fact]
+    public async Task Create_TuChoiDuongDanAnhKhongHopLe()
+    {
+        await using var context = TestSupport.CreateContext();
+        context.LoaiSanPhams.Add(new LoaiSanPham { MaLoai = 1, TenLoai = "Điện thoại" });
+        await context.SaveChangesAsync();
+        var controller = TestSupport.CreateController(context, isAdmin: true);
+        var product = TestSupport.Product("Sản phẩm", 1);
+        product.HinhAnh = "javascript:alert(1)";
+
+        var result = await controller.Create(product);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.True(controller.ModelState.ContainsKey(nameof(SanPham.HinhAnh)));
+        Assert.Empty(context.SanPhams);
+    }
+
+    [Theory]
+    [MemberData(nameof(NgayNhapKhongHopLe))]
+    public async Task Create_TuChoiNgayNhapNgoaiKhoang(DateTime invalidDate)
+    {
+        await using var context = TestSupport.CreateContext();
+        context.LoaiSanPhams.Add(new LoaiSanPham { MaLoai = 1, TenLoai = "Điện thoại" });
+        await context.SaveChangesAsync();
+        var controller = TestSupport.CreateController(context, isAdmin: true);
+        var product = TestSupport.Product("Sản phẩm", 1);
+        product.NgayNhap = invalidDate;
+
+        var result = await controller.Create(product);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.True(controller.ModelState.ContainsKey(nameof(SanPham.NgayNhap)));
+        Assert.Empty(context.SanPhams);
+    }
+
+    [Fact]
+    public async Task Create_ChuanHoaMoTaVaDuongDanAnhTruocKhiLuu()
+    {
+        await using var context = TestSupport.CreateContext();
+        context.LoaiSanPhams.Add(new LoaiSanPham { MaLoai = 1, TenLoai = "Điện thoại" });
+        await context.SaveChangesAsync();
+        var controller = TestSupport.CreateController(context, isAdmin: true);
+        var product = TestSupport.Product("Sản phẩm", 1);
+        product.MoTa = "  Mô tả sản phẩm  ";
+        product.HinhAnh = "  /images/products/a.jpg  ";
+
+        var result = await controller.Create(product);
+
+        Assert.IsType<RedirectToActionResult>(result);
+        var saved = Assert.Single(context.SanPhams);
+        Assert.Equal("Mô tả sản phẩm", saved.MoTa);
+        Assert.Equal("/images/products/a.jpg", saved.HinhAnh);
+    }
+
+    [Fact]
+    public async Task Index_KhoangGiaNhapNguoc_DuocHoanDoiVaCanhBao()
+    {
+        await using var context = TestSupport.CreateContext();
+        context.LoaiSanPhams.Add(new LoaiSanPham { MaLoai = 1, TenLoai = "Điện thoại" });
+        context.SanPhams.Add(TestSupport.Product("Sản phẩm", 1, price: 150m));
+        await context.SaveChangesAsync();
+        var controller = TestSupport.CreateController(context, isAdmin: true);
+
+        var result = Assert.IsType<ViewResult>(await IndexAsync(controller, giaTu: 200m, giaDen: 100m));
+        var products = Assert.IsAssignableFrom<IEnumerable<SanPham>>(result.Model).ToList();
+
+        Assert.Single(products);
+        Assert.Equal(100m, Assert.IsType<decimal>(result.ViewData["CurrentGiaTu"]));
+        Assert.Equal(200m, Assert.IsType<decimal>(result.ViewData["CurrentGiaDen"]));
+        Assert.NotNull(result.ViewData["FilterWarning"]);
+    }
+
+    [Fact]
+    public async Task Index_KieuSapXepKhongHopLe_DuaVeTenTangDan()
+    {
+        await using var context = TestSupport.CreateContext();
+        context.LoaiSanPhams.Add(new LoaiSanPham { MaLoai = 1, TenLoai = "Điện thoại" });
+        context.SanPhams.AddRange(
+            TestSupport.Product("Beta", 1),
+            TestSupport.Product("Alpha", 1));
+        await context.SaveChangesAsync();
+        var controller = TestSupport.CreateController(context, isAdmin: true);
+
+        var result = Assert.IsType<ViewResult>(await IndexAsync(controller, sapXep: "khong-hop-le"));
+        var products = Assert.IsAssignableFrom<IEnumerable<SanPham>>(result.Model).ToList();
+
+        Assert.Equal(new[] { "Alpha", "Beta" }, products.Select(product => product.TenSanPham));
+        Assert.Null(result.ViewData["CurrentSapXep"]);
+        Assert.NotNull(result.ViewData["FilterWarning"]);
+    }
+
+    [Fact]
     public async Task Delete_ChanSanPhamDaCoChiTietDonHang()
     {
         await using var context = TestSupport.CreateContext();
@@ -369,4 +462,10 @@ public class SanPhamControllerTests
         int page = 1,
         int pageSize = 6) =>
         controller.Index(tuKhoa, maLoai, thuongHieu, trangThai, giaTu, giaDen, sapXep, page, pageSize);
+
+    public static IEnumerable<object[]> NgayNhapKhongHopLe()
+    {
+        yield return [new DateTime(1999, 12, 31)];
+        yield return [DateTime.Today.AddDays(1)];
+    }
 }

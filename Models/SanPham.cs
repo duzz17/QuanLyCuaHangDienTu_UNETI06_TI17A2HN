@@ -1,5 +1,5 @@
 // Họ và tên: Phạm Văn Cường - MSSV: 23103100094
-// Module 2: Quản lý và tra cứu sản phẩm
+// Nội dung thực hiện: Entity, quan hệ và validation sản phẩm (Module 2)
 using System.ComponentModel.DataAnnotations;
 
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
@@ -25,6 +25,7 @@ public class SanPham
     public string XuatXu { get; set; } = string.Empty;
 
     [Display(Name = "Mô tả")]
+    [StringLength(2000, ErrorMessage = "Mô tả tối đa 2000 ký tự")]
     public string MoTa { get; set; } = string.Empty;
 
     [Display(Name = "Đơn giá")]
@@ -47,13 +48,16 @@ public class SanPham
     public TrangThaiSanPham TrangThai { get; set; } = TrangThaiSanPham.DangKinhDoanh;
 
     [Display(Name = "Hình ảnh")]
+    [StringLength(500, ErrorMessage = "Đường dẫn hình ảnh tối đa 500 ký tự")]
+    [DuongDanAnh]
     public string HinhAnh { get; set; } = string.Empty;
 
     [Display(Name = "Ngày nhập")]
+    [DataType(DataType.Date)]
     public DateTime NgayNhap { get; set; } = DateTime.Now;
 
     [Display(Name = "Loại sản phẩm")]
-    [Required(ErrorMessage = "Vui lòng chọn loại sản phẩm")]
+    [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn loại sản phẩm")]
     public int MaLoai { get; set; }
     
     public LoaiSanPham? LoaiSanPham { get; set; }

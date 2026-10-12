@@ -90,11 +90,14 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<SanPham>()
             .ToTable(t =>
             {
+                t.HasCheckConstraint("CK_SanPhams_TenSanPham", "LEN(LTRIM(RTRIM([TenSanPham]))) > 0");
+                t.HasCheckConstraint("CK_SanPhams_ThuongHieu", "LEN(LTRIM(RTRIM([ThuongHieu]))) > 0");
                 t.HasCheckConstraint("CK_SanPhams_Gia", "[Gia] > 0");
                 t.HasCheckConstraint("CK_SanPhams_SoLuong", "[SoLuong] >= 0");
                 t.HasCheckConstraint("CK_SanPhams_ThoiGianBaoHanh", "[ThoiGianBaoHanh] BETWEEN 0 AND 120");
                 t.HasCheckConstraint("CK_SanPhams_TrangThai", "[TrangThai] IN (0, 1, 2)");
                 t.HasCheckConstraint("CK_SanPhams_XuatXu", "LEN(LTRIM(RTRIM([XuatXu]))) > 0");
+                t.HasCheckConstraint("CK_SanPhams_NgayNhap", "[NgayNhap] >= '2000-01-01'");
             });
 
         // Tổng tiền đơn hàng

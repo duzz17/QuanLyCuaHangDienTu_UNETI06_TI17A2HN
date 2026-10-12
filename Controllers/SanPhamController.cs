@@ -11,6 +11,13 @@ namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Controllers;
 
 public class SanPhamController : Controller
 {
+    private const int MaxTuKhoaLength = 200;
+    private const int MaxThuongHieuLength = 100;
+    private static readonly DateTime NgayNhapToiThieu = new(2000, 1, 1);
+    private static readonly HashSet<string> SapXepHopLe =
+    [
+        "ten_desc", "gia_asc", "gia_desc", "ton_asc", "ton_desc"
+    ];
     private readonly ApplicationDbContext _context;
 
     public SanPhamController(ApplicationDbContext context)
@@ -31,16 +38,57 @@ public class SanPhamController : Controller
         int pageSize = 6        // M2-10: Số sản phẩm mỗi trang (mặc định 6)
     )
     {
+        var filterWarnings = new List<string>();
         int[] pageSizes = [6, 12, 24, 48];
-        if (!pageSizes.Contains(pageSize)) pageSize = 6;
-        if (maLoai is <= 0) maLoai = null;
-        if (trangThai.HasValue && !Enum.IsDefined(trangThai.Value)) trangThai = null;
-        if (giaTu is < 0) giaTu = 0;
-        if (giaDen is < 0) giaDen = 0;
+        if (!ModelState.IsValid)
+            filterWarnings.Add("Một số điều kiện lọc không đúng định dạng và đã được bỏ qua.");
+        if (!pageSizes.Contains(pageSize))
+        {
+            pageSize = 6;
+            filterWarnings.Add("Số sản phẩm mỗi trang không hợp lệ, hệ thống đã dùng mức 6.");
+        }
+        if (maLoai is <= 0)
+        {
+            maLoai = null;
+            filterWarnings.Add("Danh mục lọc không hợp lệ và đã được bỏ qua.");
+        }
+        if (trangThai.HasValue && !Enum.IsDefined(trangThai.Value))
+        {
+            trangThai = null;
+            filterWarnings.Add("Trạng thái lọc không hợp lệ và đã được bỏ qua.");
+        }
+        if (giaTu is < 0)
+        {
+            giaTu = 0;
+            filterWarnings.Add("Giá từ không được âm và đã được đưa về 0.");
+        }
+        if (giaDen is < 0)
+        {
+            giaDen = 0;
+            filterWarnings.Add("Giá đến không được âm và đã được đưa về 0.");
+        }
         if (giaTu.HasValue && giaDen.HasValue && giaTu > giaDen)
+        {
             (giaTu, giaDen) = (giaDen, giaTu);
+            filterWarnings.Add("Khoảng giá nhập ngược đã được hoán đổi.");
+        }
         tuKhoa = string.IsNullOrWhiteSpace(tuKhoa) ? null : tuKhoa.Trim();
         thuongHieu = string.IsNullOrWhiteSpace(thuongHieu) ? null : thuongHieu.Trim();
+        if (tuKhoa?.Length > MaxTuKhoaLength)
+        {
+            tuKhoa = tuKhoa[..MaxTuKhoaLength];
+            filterWarnings.Add($"Từ khóa chỉ được dùng tối đa {MaxTuKhoaLength} ký tự.");
+        }
+        if (thuongHieu?.Length > MaxThuongHieuLength)
+        {
+            thuongHieu = thuongHieu[..MaxThuongHieuLength];
+            filterWarnings.Add($"Thương hiệu chỉ được dùng tối đa {MaxThuongHieuLength} ký tự.");
+        }
+        if (!string.IsNullOrEmpty(sapXep) && !SapXepHopLe.Contains(sapXep))
+        {
+            sapXep = null;
+            filterWarnings.Add("Kiểu sắp xếp không hợp lệ, hệ thống đã dùng Tên A - Z.");
+        }
 
         var isManagement = HttpContext.Session.GetString("VaiTro") == "Admin"
             && HttpContext.Request.Query["view"] != "store";
@@ -55,7 +103,7 @@ public class SanPhamController : Controller
         // M2-07: Tìm kiếm theo tên hoặc thương hiệu
         if (!string.IsNullOrWhiteSpace(tuKhoa))
         {
-            var kw = tuKhoa;
+            var kw = EscapeLikePattern(tuKhoa);
             query = query.Where(s => EF.Functions.Like(s.TenSanPham, $"%{kw}%")
                                   || EF.Functions.Like(s.ThuongHieu, $"%{kw}%"));
         }
@@ -143,6 +191,9 @@ public class SanPhamController : Controller
         ViewBag.ToItem = Math.Min(page * pageSize, totalItems);
         ViewBag.HasPreviousPage = page > 1;
         ViewBag.HasNextPage = page < totalPages;
+        ViewBag.FilterWarning = filterWarnings.Count == 0
+            ? null
+            : string.Join(" ", filterWarnings.Distinct());
 
         return View(sanPhams);
     }
@@ -317,9 +368,21 @@ public class SanPhamController : Controller
         sanPham.TenSanPham = sanPham.TenSanPham?.Trim() ?? string.Empty;
         sanPham.ThuongHieu = sanPham.ThuongHieu?.Trim() ?? string.Empty;
         sanPham.XuatXu = sanPham.XuatXu?.Trim() ?? string.Empty;
+        sanPham.MoTa = sanPham.MoTa?.Trim() ?? string.Empty;
+        sanPham.HinhAnh = sanPham.HinhAnh?.Trim() ?? string.Empty;
 
+        if (string.IsNullOrWhiteSpace(sanPham.TenSanPham))
+            ModelState.AddModelError(nameof(sanPham.TenSanPham), "Tên sản phẩm không được để trống.");
+        if (string.IsNullOrWhiteSpace(sanPham.ThuongHieu))
+            ModelState.AddModelError(nameof(sanPham.ThuongHieu), "Thương hiệu không được để trống.");
         if (string.IsNullOrWhiteSpace(sanPham.XuatXu))
             ModelState.AddModelError(nameof(sanPham.XuatXu), "Xuất xứ không được để trống.");
+        if (!DuongDanAnhAttribute.IsValidPath(sanPham.HinhAnh))
+            ModelState.AddModelError(nameof(sanPham.HinhAnh),
+                "Hình ảnh phải là URL http/https hoặc đường dẫn /images/... có đuôi ảnh hợp lệ.");
+        if (sanPham.NgayNhap.Date < NgayNhapToiThieu || sanPham.NgayNhap.Date > DateTime.Today)
+            ModelState.AddModelError(nameof(sanPham.NgayNhap),
+                $"Ngày nhập phải từ {NgayNhapToiThieu:dd/MM/yyyy} đến {DateTime.Today:dd/MM/yyyy}.");
         if (sanPham.Gia <= 0)
             ModelState.AddModelError(nameof(sanPham.Gia), "Đơn giá sản phẩm phải lớn hơn 0 ₫.");
         if (sanPham.SoLuong < 0)
@@ -332,6 +395,11 @@ public class SanPhamController : Controller
                 l.MaLoai == sanPham.MaLoai && (l.TrangThai || l.MaLoai == currentMaLoai)))
             ModelState.AddModelError(nameof(sanPham.MaLoai), "Vui lòng chọn loại sản phẩm hợp lệ.");
     }
+
+    private static string EscapeLikePattern(string value) =>
+        value.Replace("[", "[[]", StringComparison.Ordinal)
+            .Replace("%", "[%]", StringComparison.Ordinal)
+            .Replace("_", "[_]", StringComparison.Ordinal);
 
     private static string GetTrangThaiText(TrangThaiSanPham trangThai) => trangThai switch
     {

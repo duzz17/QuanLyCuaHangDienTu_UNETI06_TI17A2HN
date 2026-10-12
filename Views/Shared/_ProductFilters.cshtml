@@ -1,3 +1,5 @@
+@* Họ và tên: Phạm Văn Cường - MSSV: 23103100094
+   Nội dung thực hiện: Bộ lọc, sắp xếp và chọn kích thước trang sản phẩm (Module 2). *@
 @model bool
 @using System.Globalization
 @using Microsoft.AspNetCore.Mvc.Rendering
@@ -10,11 +12,14 @@
 }
 <form asp-controller="SanPham" asp-action="Index" method="get" class="product-filter-form">
     <input type="hidden" name="view" value="@(Model ? "admin" : "store")" />
-    <div class="filter-field"><label for="filter-keyword">Tìm kiếm</label><input id="filter-keyword" class="form-control" name="tuKhoa" value="@ViewBag.CurrentTuKhoa" placeholder="Tên hoặc thương hiệu" /></div>
+    @if (ViewBag.FilterWarning is string filterWarning) {
+        <div class="alert alert-warning py-2 mb-0" role="alert">@filterWarning</div>
+    }
+    <div class="filter-field"><label for="filter-keyword">Tìm kiếm</label><input id="filter-keyword" class="form-control" name="tuKhoa" maxlength="200" value="@ViewBag.CurrentTuKhoa" placeholder="Tên hoặc thương hiệu" /></div>
     <div class="filter-field"><label for="filter-category">Danh mục</label><select id="filter-category" class="form-select" name="maLoai"><option value="">Tất cả danh mục</option>@foreach (var item in categories) { <option value="@item.Value" selected="@(item.Value == Value(ViewBag.CurrentMaLoai))">@item.Text</option> }</select></div>
     <div class="filter-field"><label for="filter-brand">Thương hiệu</label><select id="filter-brand" class="form-select" name="thuongHieu"><option value="">Tất cả thương hiệu</option>@foreach (var brand in brands) { <option value="@brand" selected="@(brand == (string?)ViewBag.CurrentThuongHieu)">@brand</option> }</select></div>
-    <div class="filter-field"><label for="filter-min">Giá từ (₫)</label><input id="filter-min" class="form-control" type="number" min="0" name="giaTu" value="@Value(ViewBag.CurrentGiaTu)" /></div>
-    <div class="filter-field"><label for="filter-max">Giá đến (₫)</label><input id="filter-max" class="form-control" type="number" min="0" name="giaDen" value="@Value(ViewBag.CurrentGiaDen)" /></div>
+    <div class="filter-field"><label for="filter-min">Giá từ (₫)</label><input id="filter-min" class="form-control" type="number" min="0" max="9999999999999999.99" step="0.01" name="giaTu" value="@Value(ViewBag.CurrentGiaTu)" /></div>
+    <div class="filter-field"><label for="filter-max">Giá đến (₫)</label><input id="filter-max" class="form-control" type="number" min="0" max="9999999999999999.99" step="0.01" name="giaDen" value="@Value(ViewBag.CurrentGiaDen)" /></div>
     @if (Model) {
         <div class="filter-field"><label for="filter-status">Trạng thái</label><select id="filter-status" name="trangThai" class="form-select"><option value="">Tất cả trạng thái</option><option value="@TrangThaiSanPham.DangKinhDoanh" selected="@(currentStatus == TrangThaiSanPham.DangKinhDoanh)">Đang kinh doanh</option><option value="@TrangThaiSanPham.TamNgung" selected="@(currentStatus == TrangThaiSanPham.TamNgung)">Tạm ngừng</option><option value="@TrangThaiSanPham.NgungKinhDoanh" selected="@(currentStatus == TrangThaiSanPham.NgungKinhDoanh)">Ngừng kinh doanh</option></select></div>
     }
