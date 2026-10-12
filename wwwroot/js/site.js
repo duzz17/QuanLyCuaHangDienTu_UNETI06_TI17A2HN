@@ -54,6 +54,51 @@
   document.querySelectorAll("form[data-confirm]").forEach(form => {
     form.addEventListener("submit", event => { if (!window.confirm(form.dataset.confirm)) event.preventDefault(); });
   });
+  const showCartFeedback = (message, warning = false) => {
+    const container = document.querySelector("[data-cart-feedback-container]");
+    if (!container || !message) return;
+    const feedback = document.createElement("div");
+    feedback.className = `cart-feedback ${warning ? "warning" : "success"}`;
+    feedback.setAttribute("role", warning ? "alert" : "status");
+    feedback.textContent = message;
+    container.replaceChildren(feedback);
+    window.setTimeout(() => feedback.remove(), 3500);
+  };
+  document.querySelectorAll("form[data-cart-form]").forEach(form => {
+    form.addEventListener("submit", async event => {
+      const submitter = event.submitter;
+      if (!(submitter instanceof HTMLButtonElement) || !submitter.hasAttribute("data-ajax-cart-submit")) return;
+      event.preventDefault();
+      submitter.disabled = true;
+      form.setAttribute("aria-busy", "true");
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          credentials: "same-origin",
+          headers: {
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        });
+        if (response.redirected) {
+          window.location.assign(response.url);
+          return;
+        }
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || "Không thể thêm sản phẩm vào giỏ hàng.");
+        document.querySelectorAll(".cart-count").forEach(count => {
+          count.textContent = String(result.cartCount);
+        });
+        showCartFeedback(result.message, result.warning);
+      } catch (error) {
+        showCartFeedback(error instanceof Error ? error.message : "Không thể thêm sản phẩm vào giỏ hàng.", true);
+      } finally {
+        submitter.disabled = false;
+        form.removeAttribute("aria-busy");
+      }
+    });
+  });
   document.querySelector("[data-print]")?.addEventListener("click", () => window.print());
   const fallback = document.currentScript?.dataset.productPlaceholder || "/images/product-placeholder.svg";
   document.querySelectorAll("img[data-product-image]").forEach(img => {

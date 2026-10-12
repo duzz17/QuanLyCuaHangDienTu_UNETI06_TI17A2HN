@@ -59,25 +59,37 @@ public class GioHangController : Controller
     // POST: /GioHang/ThemVaoGio (Thêm sản phẩm vào giỏ)
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ThemVaoGio(int maSanPham, int soLuong = 1)
+    public async Task<IActionResult> ThemVaoGio(int maSanPham, int soLuong = 1, bool muaNgay = false)
     {
+        var ajaxRequest = string.Equals(
+            Request.Headers["X-Requested-With"],
+            "XMLHttpRequest",
+            StringComparison.OrdinalIgnoreCase);
         if (soLuong <= 0) soLuong = 1;
 
         var sanPham = await _context.SanPhams.FirstOrDefaultAsync(sp => sp.MaSanPham == maSanPham);
         if (sanPham == null || sanPham.TrangThai != TrangThaiSanPham.DangKinhDoanh)
         {
-            TempData["Loi"] = "Sản phẩm không tồn tại hoặc đã ngừng kinh doanh!";
+            const string errorMessage = "Sản phẩm không tồn tại hoặc đã ngừng kinh doanh!";
+            if (ajaxRequest)
+                return NotFound(new { success = false, message = errorMessage });
+            TempData["Loi"] = errorMessage;
             return RedirectToAction("Index", "SanPham");
         }
 
         if (sanPham.SoLuong <= 0)
         {
-            TempData["Loi"] = $"Sản phẩm '{sanPham.TenSanPham}' hiện đã hết hàng!";
+            var errorMessage = $"Sản phẩm '{sanPham.TenSanPham}' hiện đã hết hàng!";
+            if (ajaxRequest)
+                return BadRequest(new { success = false, message = errorMessage });
+            TempData["Loi"] = errorMessage;
             return RedirectToAction("Index", "SanPham");
         }
 
         var cart = GetCartFromSession();
         var item = cart.FirstOrDefault(i => i.MaSanPham == maSanPham);
+        string message;
+        var warning = false;
 
         if (item != null)
         {
@@ -85,12 +97,13 @@ public class GioHangController : Controller
             if (soLuongMoi > sanPham.SoLuong)
             {
                 item.SoLuong = sanPham.SoLuong;
-                TempData["Loi"] = $"Chỉ có thể thêm tối đa {sanPham.SoLuong} sản phẩm '{sanPham.TenSanPham}' vào giỏ hàng.";
+                warning = true;
+                message = $"Chỉ có thể thêm tối đa {sanPham.SoLuong} sản phẩm '{sanPham.TenSanPham}' vào giỏ hàng.";
             }
             else
             {
                 item.SoLuong = soLuongMoi;
-                TempData["ThongBao"] = $"Đã cập nhật số lượng sản phẩm '{sanPham.TenSanPham}' trong giỏ hàng thành {item.SoLuong}.";
+                message = $"Đã cập nhật số lượng sản phẩm '{sanPham.TenSanPham}' trong giỏ hàng thành {item.SoLuong}.";
             }
         }
         else
@@ -104,11 +117,28 @@ public class GioHangController : Controller
                 Gia = sanPham.Gia,
                 SoLuong = slThem
             });
-            TempData["ThongBao"] = $"Đã thêm '{sanPham.TenSanPham}' vào giỏ hàng thành công!";
+            warning = slThem < soLuong;
+            message = warning
+                ? $"Chỉ có thể thêm tối đa {slThem} sản phẩm '{sanPham.TenSanPham}' vào giỏ hàng."
+                : $"Đã thêm '{sanPham.TenSanPham}' vào giỏ hàng thành công!";
         }
 
         SaveCartToSession(cart);
-        return RedirectToAction(nameof(Index));
+        if (ajaxRequest)
+        {
+            return Json(new
+            {
+                success = true,
+                warning,
+                message,
+                cartCount = cart.Sum(cartItem => cartItem.SoLuong)
+            });
+        }
+
+        TempData[warning ? "Loi" : "ThongBao"] = message;
+        return muaNgay
+            ? RedirectToAction("DatHang", "DonHang")
+            : RedirectToAction(nameof(Index));
     }
 
     // POST: /GioHang/CapNhatGioHang

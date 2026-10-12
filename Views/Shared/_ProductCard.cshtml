@@ -24,10 +24,17 @@
         <span class="product-warranty"><svg class="icon"><use href="#i-shield" /></svg>Bảo hành @Model.ThoiGianBaoHanh tháng</span>
         <div class="product-card-bottom">
             <strong class="product-price">@Model.Gia.ToString("N0", CultureInfo.GetCultureInfo("vi-VN")) <small>₫</small></strong>
-            <form asp-controller="GioHang" asp-action="ThemVaoGio" method="post">
+            <form asp-controller="GioHang" asp-action="ThemVaoGio" method="post" class="product-card-purchase" data-cart-form>
                 <input type="hidden" name="maSanPham" value="@Model.MaSanPham" />
                 <input type="hidden" name="soLuong" value="1" />
-                <button class="add-cart-button" type="submit" disabled="@(!available)" aria-label="Thêm @Model.TenSanPham vào giỏ hàng"><svg class="icon"><use href="#i-plus" /></svg></button>
+                <div class="product-card-actions">
+                    <button class="btn btn-outline-primary product-card-action" type="submit" disabled="@(!available)" data-ajax-cart-submit>
+                        <svg class="icon"><use href="#i-cart" /></svg> Thêm vào giỏ hàng
+                    </button>
+                    <button class="btn btn-primary product-card-action" type="submit" name="muaNgay" value="true" disabled="@(!available)">
+                        Mua hàng
+                    </button>
+                </div>
             </form>
         </div>
     </div>

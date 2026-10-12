@@ -61,7 +61,7 @@
 </dl>
         @if (available)
         {
-            <form asp-controller="GioHang" asp-action="ThemVaoGio" method="post" class="purchase-form">
+            <form asp-controller="GioHang" asp-action="ThemVaoGio" method="post" class="purchase-form" data-cart-form>
 <input type="hidden" name="maSanPham" value="@Model.MaSanPham"/>
 <label for="purchase-quantity">Số lượng</label>
 <div class="purchase-actions">
@@ -70,10 +70,11 @@
 <input id="purchase-quantity" type="number" name="soLuong" value="1" min="1" max="@Model.SoLuong" aria-label="Số lượng sản phẩm"/>
 <button type="button" data-quantity-step="1" aria-label="Tăng số lượng">+</button>
 </div>
-<button type="submit" class="btn btn-primary">
+<button type="submit" class="btn btn-outline-primary" data-ajax-cart-submit>
 <svg class="icon">
 <use href="#i-cart"/>
 </svg> Thêm vào giỏ hàng</button>
+<button type="submit" class="btn btn-primary" name="muaNgay" value="true">Mua hàng</button>
 </div>
 </form>
         }

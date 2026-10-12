@@ -1959,9 +1959,9 @@ main:focus {
 
 .product-card-bottom {
   display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:6px;
+  flex-direction:column;
+  align-items:stretch;
+  gap:12px;
   margin-top:auto;
   padding-top:13px;
   border-top:1px solid #eff2e8
@@ -1978,30 +1978,51 @@ main:focus {
   font-size:13px
 }
 
-.add-cart-button {
-  width:32px;
-  height:32px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:9px;
-  background:#ecf3e4;
-  color:#5f8451;
-  border:0
+.product-card-purchase {
+  margin:0
 }
 
-.add-cart-button .icon {
-  width:15px;
-  height:15px
+.product-card-actions {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:8px
 }
 
-.add-cart-button:hover {
-  background:#dceacc
+.product-card-action {
+  min-height:38px;
+  padding:7px 8px;
+  font-size:11px;
+  line-height:1.25;
+  white-space:normal
 }
 
-.add-cart-button:disabled {
-  opacity:.4;
-  cursor:not-allowed
+.product-card-action .icon {
+  width:14px;
+  height:14px;
+  margin-right:3px
+}
+
+.cart-feedback-container {
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:1090;
+  width:min(390px,calc(100vw - 32px));
+  pointer-events:none
+}
+
+.cart-feedback {
+  color:#fff;
+  background:#1f654f;
+  border-radius:10px;
+  box-shadow:0 12px 32px #173d3038;
+  padding:13px 16px;
+  font-size:13px;
+  font-weight:600
+}
+
+.cart-feedback.warning {
+  background:#986b17
 }
 
 .collection-banner {
@@ -3545,9 +3566,12 @@ main:focus {
   .product-card-bottom {
     gap:3px
   }
-  .add-cart-button {
-    width:28px;
-    height:28px
+  .product-card-actions {
+    grid-template-columns:1fr
+  }
+  .product-card-action {
+    min-height:35px;
+    font-size:10px
   }
   .product-brand {
     left:8px;
