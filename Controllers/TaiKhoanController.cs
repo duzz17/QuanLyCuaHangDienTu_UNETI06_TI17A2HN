@@ -5,6 +5,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
+using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.ViewModels;
 
 namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Controllers;
@@ -79,6 +80,11 @@ public class TaiKhoanController : Controller
             HttpContext.Session.SetInt32("MaKhachHang", taiKhoan.MaKhachHang);
         }
 
+        if (!string.IsNullOrEmpty(taiKhoan.KhachHang?.HinhAnh))
+        {
+            HttpContext.Session.SetString("Avatar", taiKhoan.KhachHang.HinhAnh);
+        }
+
         TempData["ThongBao"] = $"Đăng nhập thành công! Xin chào {hoTen}.";
 
         // Chuyển hướng lại URL ban đầu nếu có, hoặc về trang chủ
@@ -125,5 +131,94 @@ public class TaiKhoanController : Controller
         }
 
         return Json(true);
+    }
+
+    // =========================================================================
+    // Đăng ký tài khoản khách hàng mới
+    // =========================================================================
+
+    // GET: /TaiKhoan/Register
+    [HttpGet]
+    public IActionResult Register()
+    {
+        if (!string.IsNullOrEmpty(HttpContext.Session.GetString("VaiTro")))
+        {
+            return RedirectToAction("Index", "Home");
+        }
+        return View(new RegisterViewModel());
+    }
+
+    // POST: /TaiKhoan/Register
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        string username = model.TenDangNhap.Trim();
+        bool daTonTaiUser = await _context.TaiKhoans
+            .AnyAsync(tk => tk.TenDangNhap.ToLower() == username.ToLower());
+        if (daTonTaiUser)
+        {
+            ModelState.AddModelError(nameof(model.TenDangNhap), $"Tên đăng nhập '{username}' đã được sử dụng. Vui lòng chọn tên khác.");
+            return View(model);
+        }
+
+        string sdt = model.SoDienThoai.Trim();
+        bool daTonTaiSdt = await _context.KhachHangs
+            .AnyAsync(kh => kh.SoDienThoai == sdt);
+        if (daTonTaiSdt)
+        {
+            ModelState.AddModelError(nameof(model.SoDienThoai), $"Số điện thoại '{sdt}' đã được đăng ký trong hệ thống.");
+            return View(model);
+        }
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var khachHang = new KhachHang
+            {
+                HoTen = model.HoTen.Trim(),
+                Email = model.Email.Trim(),
+                SoDienThoai = sdt,
+                DiaChi = model.DiaChi?.Trim() ?? string.Empty,
+                NgaySinh = model.NgaySinh,
+                NgayDangKy = DateTime.Now
+            };
+            _context.KhachHangs.Add(khachHang);
+            await _context.SaveChangesAsync();
+
+            var taiKhoan = new TaiKhoan
+            {
+                TenDangNhap = username,
+                MatKhau = model.MatKhau,
+                VaiTro = "KhachHang",
+                TrangThai = true,
+                MaKhachHang = khachHang.MaKhachHang
+            };
+            _context.TaiKhoans.Add(taiKhoan);
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+
+            // Tự động đăng nhập luôn sau khi đăng ký
+            HttpContext.Session.SetInt32("MaTaiKhoan", taiKhoan.MaTaiKhoan);
+            HttpContext.Session.SetString("HoTen", khachHang.HoTen);
+            HttpContext.Session.SetString("VaiTro", taiKhoan.VaiTro);
+            HttpContext.Session.SetString("TenDangNhap", taiKhoan.TenDangNhap);
+            HttpContext.Session.SetInt32("MaKhachHang", khachHang.MaKhachHang);
+
+            TempData["ThongBao"] = $"Chúc mừng {khachHang.HoTen}, bạn đã đăng ký tài khoản thành công!";
+            return RedirectToAction("Index", "Home");
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            ModelState.AddModelError(string.Empty, "Có lỗi xảy ra trong quá trình đăng ký tài khoản: " + ex.Message);
+            return View(model);
+        }
     }
 }

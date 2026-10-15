@@ -1,0 +1,126 @@
+@*
+    Họ và tên: Ngô Khánh Quốc Huy - MSSV: 23103100313
+    Giao diện đăng ký tài khoản khách hàng mới, thiết kế đồng nhất theo hệ thống giao diện của dự án.
+*@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký tài khoản";
+    ViewData["Storefront"] = true;
+}
+
+<div class="login-layout">
+    <!-- Cột giới thiệu / Story -->
+    <section class="login-story">
+        <span class="eyebrow">THÀNH VIÊN MỚI TẠI UNETI</span>
+        <h1>Tạo tài khoản<br/>mua sắm tiện lợi<br/><em>nhanh chóng.</em></h1>
+        <p>Đăng ký tài khoản để dễ dàng đặt hàng, theo dõi lịch sử giao hàng và cập nhật hồ sơ cá nhân của bạn.</p>
+
+        <div class="login-art" aria-hidden="true">
+            <span>
+                <svg class="icon"><use href="#i-laptop"/></svg>
+            </span>
+            <span>
+                <svg class="icon"><use href="#i-headphones"/></svg>
+            </span>
+            <span>
+                <svg class="icon"><use href="#i-phone"/></svg>
+            </span>
+        </div>
+
+        <div class="login-story-footer">
+            <svg class="icon"><use href="#i-shield"/></svg> Thông tin của bạn được cam kết bảo mật an toàn.
+        </div>
+    </section>
+
+    <!-- Cột Form Đăng ký -->
+    <section class="login-form-panel">
+        <div class="login-form-heading">
+            <span class="eyebrow">CHÀO MỪNG BẠN GIA NHẬP</span>
+            <h2>Đăng ký tài khoản</h2>
+            <p>Điền các thông tin bên dưới để tạo tài khoản mới.</p>
+        </div>
+
+        <form asp-controller="TaiKhoan" asp-action="Register" method="post" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+            <!-- Họ và tên -->
+            <div class="mb-3">
+                <label asp-for="HoTen" class="form-label fw-semibold"></label>
+                <input asp-for="HoTen" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" autofocus />
+                <span asp-validation-for="HoTen" class="text-danger small"></span>
+            </div>
+
+            <!-- Tên đăng nhập -->
+            <div class="mb-3">
+                <label asp-for="TenDangNhap" class="form-label fw-semibold"></label>
+                <input asp-for="TenDangNhap" class="form-control" autocomplete="username" placeholder="Ví dụ: nguyenvana" />
+                <span asp-validation-for="TenDangNhap" class="text-danger small"></span>
+            </div>
+
+            <!-- Email & Số điện thoại (2 cột trên desktop) -->
+            <div class="row g-2 mb-3">
+                <div class="col-sm-6">
+                    <label asp-for="Email" class="form-label fw-semibold"></label>
+                    <input asp-for="Email" type="email" class="form-control" placeholder="email@example.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+                <div class="col-sm-6">
+                    <label asp-for="SoDienThoai" class="form-label fw-semibold"></label>
+                    <input asp-for="SoDienThoai" class="form-control" placeholder="0912345678" />
+                    <span asp-validation-for="SoDienThoai" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Mật khẩu -->
+            <div class="mb-3">
+                <label asp-for="MatKhau" class="form-label fw-semibold"></label>
+                <div class="password-field">
+                    <input asp-for="MatKhau" type="password" class="form-control" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự" />
+                    <button type="button" class="icon-button" data-toggle-password="MatKhau" aria-label="Hiện mật khẩu" aria-pressed="false">
+                        <svg class="icon"><use href="#i-eye"/></svg>
+                    </button>
+                </div>
+                <span asp-validation-for="MatKhau" class="text-danger small"></span>
+            </div>
+
+            <!-- Xác nhận mật khẩu -->
+            <div class="mb-3">
+                <label asp-for="XacNhanMatKhau" class="form-label fw-semibold"></label>
+                <div class="password-field">
+                    <input asp-for="XacNhanMatKhau" type="password" class="form-control" autocomplete="new-password" placeholder="Nhập lại mật khẩu" />
+                    <button type="button" class="icon-button" data-toggle-password="XacNhanMatKhau" aria-label="Hiện mật khẩu" aria-pressed="false">
+                        <svg class="icon"><use href="#i-eye"/></svg>
+                    </button>
+                </div>
+                <span asp-validation-for="XacNhanMatKhau" class="text-danger small"></span>
+            </div>
+
+            <!-- Địa chỉ (tùy chọn) -->
+            <div class="mb-4">
+                <label asp-for="DiaChi" class="form-label fw-semibold"></label>
+                <input asp-for="DiaChi" class="form-control" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành..." />
+                <span asp-validation-for="DiaChi" class="text-danger small"></span>
+            </div>
+
+            <!-- Nút bấm Đăng ký -->
+            <button class="btn btn-primary w-100 login-submit" type="submit">
+                Hoàn tất đăng ký <svg class="icon"><use href="#i-arrow"/></svg>
+            </button>
+        </form>
+
+        <div class="login-help text-center mt-4">
+            Đã có tài khoản?
+            <a class="text-link fw-semibold" asp-controller="TaiKhoan" asp-action="Login">Đăng nhập ngay</a>
+        </div>
+
+        <a class="text-link login-back" asp-controller="SanPham" asp-action="Index" asp-route-view="store">
+            Tiếp tục xem sản phẩm <svg class="icon"><use href="#i-arrow"/></svg>
+        </a>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

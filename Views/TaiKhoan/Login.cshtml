@@ -68,9 +68,10 @@
 </svg>
 </button>
 </form>
-        <div class="login-help">Cần tài khoản hoặc hỗ trợ đăng nhập?<br/>
-<strong>Vui lòng liên hệ quản trị viên cửa hàng.</strong>
-</div>
+        <div class="login-help">
+            Chưa có tài khoản? <a class="text-link fw-semibold text-primary" asp-controller="TaiKhoan" asp-action="Register">Đăng ký thành viên mới</a><br/>
+            <small class="text-muted">Hoặc liên hệ quản trị viên nếu cần hỗ trợ đăng nhập.</small>
+        </div>
 <a class="text-link login-back" asp-controller="SanPham" asp-action="Index" asp-route-view="store">Tiếp tục khám phá sản phẩm <svg class="icon">
 <use href="#i-arrow"/>
 </svg>

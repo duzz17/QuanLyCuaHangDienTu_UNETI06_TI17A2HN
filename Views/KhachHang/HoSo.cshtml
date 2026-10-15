@@ -1,6 +1,6 @@
 @*
     Họ và tên: Ngô Khánh Quốc Huy - MSSV: 23103100313
-    Nội dung thực hiện: Giao diện xem và sửa hồ sơ cá nhân của khách hàng, Validation dữ liệu (Module 3 - M3-06)
+    Nội dung thực hiện: Giao diện xem và sửa hồ sơ cá nhân, đổi ảnh đại diện (Module 3 - M3-06)
 *@
 @model CustomerProfileViewModel
 @{
@@ -13,7 +13,7 @@
     <div>
         <span class="eyebrow">TÀI KHOẢN CỦA BẠN</span>
         <h1>Hồ sơ cá nhân<span class="heading-dot">.</span></h1>
-        <p>Xem và chỉnh sửa thông tin tài khoản đang đăng nhập.</p>
+        <p>Xem và chỉnh sửa thông tin tài khoản, cập nhật ảnh đại diện đang đăng nhập.</p>
     </div>
     @if (!isAdmin)
     {
@@ -32,15 +32,45 @@
             <div class="panel-heading">
                 <div>
                     <h2>Thông tin tài khoản</h2>
-                    <p>Chỉnh sửa các trường thông tin cá nhân được phép.</p>
+                    <p>Chỉnh sửa các trường thông tin cá nhân và ảnh đại diện.</p>
                 </div>
             </div>
             <div class="p-4">
-                <form asp-action="HoSo" method="post" novalidate>
+                <form asp-action="HoSo" method="post" enctype="multipart/form-data" novalidate>
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="MaKhachHang" />
+                    <input type="hidden" asp-for="HinhAnh" />
 
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-4" role="alert"></div>
+
+                    <!-- Phần thay đổi ảnh đại diện (Avatar) -->
+                    <div class="row mb-4 align-items-center">
+                        <label class="col-sm-3 col-form-label fw-semibold">Ảnh đại diện</label>
+                        <div class="col-sm-9">
+                            <div class="d-flex align-items-center gap-3">
+                                <div id="avatarPreviewContainer">
+                                    @if (!string.IsNullOrEmpty(Model.HinhAnh))
+                                    {
+                                        <img id="avatarPreviewImg" src="@Model.HinhAnh" alt="Avatar" class="avatar" style="width:68px; height:68px; object-fit:cover; border:2px solid var(--green);" />
+                                    }
+                                    else
+                                    {
+                                        <div id="avatarPreviewFallback" class="avatar fs-3" style="width:68px; height:68px; font-weight:700;">
+                                            @(string.IsNullOrWhiteSpace(Model.DisplayName) ? "U" : Model.DisplayName[..1].ToUpper())
+                                        </div>
+                                        <img id="avatarPreviewImg" src="" alt="Avatar" class="avatar d-none" style="width:68px; height:68px; object-fit:cover; border:2px solid var(--green);" />
+                                    }
+                                </div>
+                                <div class="flex-grow-1">
+                                    <input type="file" name="avatarFile" id="avatarFileInput" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp,.gif" />
+                                    <div class="form-text small text-muted">Chọn file ảnh (.jpg, .png, .webp...) dung lượng tối đa 5MB.</div>
+                                    <span class="text-danger small" data-valmsg-for="avatarFile"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3" style="border-color: var(--line);" />
 
                     <!-- Tên đăng nhập (chỉ đọc) -->
                     <div class="row mb-3 align-items-center">
@@ -133,9 +163,16 @@
             </div>
             <div class="p-4">
                 <div class="d-flex align-items-center gap-3 mb-3">
-                    <span class="avatar fs-4" style="width:52px; height:52px; font-weight:700;">
-                        @(string.IsNullOrWhiteSpace(Model.DisplayName) ? "U" : Model.DisplayName[..1].ToUpper())
-                    </span>
+                    @if (!string.IsNullOrEmpty(Model.HinhAnh))
+                    {
+                        <img src="@Model.HinhAnh" alt="@Model.DisplayName" class="avatar" style="width:58px; height:58px; object-fit:cover; border:2px solid var(--green);" />
+                    }
+                    else
+                    {
+                        <span class="avatar fs-4" style="width:58px; height:58px; font-weight:700;">
+                            @(string.IsNullOrWhiteSpace(Model.DisplayName) ? "U" : Model.DisplayName[..1].ToUpper())
+                        </span>
+                    }
                     <div>
                         <strong class="d-block fs-6">@Model.DisplayName</strong>
                         <span class="badge @(isAdmin ? "bg-dark" : "bg-success")">
@@ -183,4 +220,24 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('avatarFileInput')?.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = document.getElementById('avatarPreviewImg');
+                    const fallback = document.getElementById('avatarPreviewFallback');
+                    if (img) {
+                        img.src = event.target.result;
+                        img.classList.remove('d-none');
+                    }
+                    if (fallback) {
+                        fallback.classList.add('d-none');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 }

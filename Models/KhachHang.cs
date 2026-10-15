@@ -40,6 +40,10 @@ public class KhachHang
     [Display(Name = "Ngày đăng ký")]
     public DateTime NgayDangKy { get; set; } = DateTime.Now;
 
+    [Display(Name = "Ảnh đại diện")]
+    [StringLength(500)]
+    public string? HinhAnh { get; set; }
+
     // Quan hệ với DonHang
     public ICollection<DonHang> DonHangs { get; set; } = new List<DonHang>();
 

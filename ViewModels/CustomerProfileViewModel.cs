@@ -44,6 +44,9 @@ public class CustomerProfileViewModel
     [Display(Name = "Ngày đăng ký")]
     public DateTime? RegisteredAt { get; set; }
 
+    [Display(Name = "Ảnh đại diện")]
+    public string? HinhAnh { get; set; }
+
     // Thống kê đơn hàng cho hồ sơ cá nhân
     public int SoLuongDonHang { get; set; }
     public decimal TongChiTieu { get; set; }

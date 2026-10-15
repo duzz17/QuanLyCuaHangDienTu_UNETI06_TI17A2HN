@@ -295,6 +295,7 @@ public class KhachHangController : Controller
             Phone = khachHang.SoDienThoai,
             Address = khachHang.DiaChi,
             DateOfBirth = khachHang.NgaySinh,
+            HinhAnh = khachHang.HinhAnh,
             RegisteredAt = khachHang.NgayDangKy,
             SoLuongDonHang = khachHang.DonHangs?.Count ?? 0,
             TongChiTieu = donHangsHopLe?.Sum(d => d.TongTien) ?? 0
@@ -306,7 +307,7 @@ public class KhachHangController : Controller
     // POST: /KhachHang/HoSo
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> HoSo(CustomerProfileViewModel model)
+    public async Task<IActionResult> HoSo(CustomerProfileViewModel model, IFormFile? avatarFile)
     {
         var vaiTro = HttpContext.Session.GetString("VaiTro");
         var maKhachHangSession = HttpContext.Session.GetInt32("MaKhachHang");
@@ -330,6 +331,21 @@ public class KhachHangController : Controller
             ModelState.AddModelError(nameof(model.DateOfBirth), "Ngày sinh không được vượt quá ngày hiện tại.");
         }
 
+        // Kiểm tra định dạng file ảnh đại diện nếu có tải lên
+        if (avatarFile != null && avatarFile.Length > 0)
+        {
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+            var ext = Path.GetExtension(avatarFile.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(ext))
+            {
+                ModelState.AddModelError("avatarFile", "Chỉ chấp nhận file ảnh có định dạng .jpg, .jpeg, .png, .webp, .gif.");
+            }
+            else if (avatarFile.Length > 5 * 1024 * 1024)
+            {
+                ModelState.AddModelError("avatarFile", "Dung lượng ảnh tối đa là 5MB.");
+            }
+        }
+
         if (!ModelState.IsValid)
         {
             // Nạp lại các trường chỉ đọc để hiển thị giao diện đúng
@@ -343,6 +359,7 @@ public class KhachHangController : Controller
             {
                 model.Username = currentKh.TaiKhoan?.TenDangNhap ?? string.Empty;
                 model.Role = currentKh.TaiKhoan?.VaiTro ?? "KhachHang";
+                model.HinhAnh = currentKh.HinhAnh;
                 model.RegisteredAt = currentKh.NgayDangKy;
                 model.SoLuongDonHang = currentKh.DonHangs?.Count ?? 0;
                 model.TongChiTieu = currentKh.DonHangs?.Where(d => d.TrangThai != "DaHuy").Sum(d => d.TongTien) ?? 0;
@@ -365,6 +382,30 @@ public class KhachHangController : Controller
             return RedirectToAction("Logout", "TaiKhoan");
         }
 
+        // Xử lý lưu file ảnh đại diện nếu người dùng tải file mới
+        if (avatarFile != null && avatarFile.Length > 0)
+        {
+            var ext = Path.GetExtension(avatarFile.FileName).ToLowerInvariant();
+            var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "avatars");
+            if (!Directory.Exists(uploadDir))
+            {
+                Directory.CreateDirectory(uploadDir);
+            }
+            var fileName = $"avatar_{khachHang.MaKhachHang}_{DateTime.Now.Ticks}{ext}";
+            var filePath = Path.Combine(uploadDir, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await avatarFile.CopyToAsync(stream);
+            }
+            khachHang.HinhAnh = "/uploads/avatars/" + fileName;
+            HttpContext.Session.SetString("Avatar", khachHang.HinhAnh);
+        }
+        else if (!string.IsNullOrWhiteSpace(model.HinhAnh))
+        {
+            khachHang.HinhAnh = model.HinhAnh.Trim();
+            HttpContext.Session.SetString("Avatar", khachHang.HinhAnh);
+        }
+
         // Cập nhật các trường được phép sửa
         khachHang.HoTen = model.DisplayName.Trim();
         khachHang.Email = model.Email?.Trim() ?? string.Empty;
@@ -378,7 +419,7 @@ public class KhachHangController : Controller
         // Đồng bộ họ tên mới vào Session
         HttpContext.Session.SetString("HoTen", khachHang.HoTen);
 
-        TempData["ThongBao"] = "Cập nhật thông tin cá nhân thành công!";
+        TempData["ThongBao"] = "Cập nhật thông tin cá nhân và ảnh đại diện thành công!";
         return RedirectToAction(nameof(HoSo));
     }
 

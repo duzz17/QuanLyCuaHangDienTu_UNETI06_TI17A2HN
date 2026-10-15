@@ -3,15 +3,17 @@
 // Nội dung thực hiện: Cấu hình kết nối SQL Server, đăng ký MVC, Session và pipeline HTTP (Module 1 - M1-02, M1-07)
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Kết nối SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    ));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+});
 
 // Cấu hình Session (M1-02, M1-07)
 builder.Services.AddDistributedMemoryCache();
