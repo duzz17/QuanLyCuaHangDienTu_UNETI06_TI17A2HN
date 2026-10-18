@@ -135,7 +135,7 @@ public class KhachHangController : Controller
     [AdminOnly]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("MaKhachHang,HoTen,Email,SoDienThoai,DiaChi,NgayDangKy")] KhachHang khachHang)
+    public async Task<IActionResult> Edit(int id, [Bind("MaKhachHang,HoTen,Email,SoDienThoai,DiaChi,NgayDangKy,HinhAnh")] KhachHang khachHang)
     {
         if (id != khachHang.MaKhachHang)
         {

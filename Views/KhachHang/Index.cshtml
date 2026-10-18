@@ -65,11 +65,25 @@ else
                     <tr>
                         <td class="text-center fw-bold text-secondary">@(stt++)</td>
                         <td>
-                            <strong class="text-dark">@item.HoTen</strong>
-                            @if (item.TaiKhoan != null)
-                            {
-                                <span class="badge bg-info text-dark ms-1" title="Tài khoản hệ thống">@item.TaiKhoan.TenDangNhap</span>
-                            }
+                            <div class="d-flex align-items-center gap-2">
+                                @if (!string.IsNullOrEmpty(item.HinhAnh))
+                                {
+                                    <img src="@item.HinhAnh" alt="Avatar" class="rounded-circle shadow-sm" style="width: 36px; height: 36px; object-fit: cover; border: 1.5px solid #2d6a4f;" />
+                                }
+                                else
+                                {
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 36px; height: 36px; font-weight: 600; font-size: 0.85rem; background-color: #2d6a4f;">
+                                        @(string.IsNullOrWhiteSpace(item.HoTen) ? "K" : item.HoTen.Trim()[..1].ToUpper())
+                                    </div>
+                                }
+                                <div>
+                                    <strong class="text-dark">@item.HoTen</strong>
+                                    @if (item.TaiKhoan != null)
+                                    {
+                                        <span class="badge bg-info text-dark ms-1" title="Tài khoản hệ thống">@item.TaiKhoan.TenDangNhap</span>
+                                    }
+                                </div>
+                            </div>
                         </td>
                         <td>
                             <span class="badge bg-light text-dark border">@item.SoDienThoai</span>

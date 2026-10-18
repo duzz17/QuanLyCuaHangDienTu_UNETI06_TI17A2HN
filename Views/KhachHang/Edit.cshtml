@@ -14,7 +14,26 @@
                 <form asp-action="Edit" method="post">
                     <input type="hidden" asp-for="MaKhachHang" />
                     <input type="hidden" asp-for="NgayDangKy" />
+                    <input type="hidden" asp-for="HinhAnh" />
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+
+                    <!-- Hiển thị ảnh đại diện khách hàng (Chỉ xem) -->
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded border mb-3">
+                        @if (!string.IsNullOrEmpty(Model.HinhAnh))
+                        {
+                            <img src="@Model.HinhAnh" alt="Avatar" class="rounded-circle shadow-sm" style="width: 56px; height: 56px; object-fit: cover; border: 2px solid #2d6a4f;" />
+                        }
+                        else
+                        {
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white shadow-sm" style="width: 56px; height: 56px; font-size: 1.4rem; font-weight: 700; background-color: #2d6a4f;">
+                                @(string.IsNullOrWhiteSpace(Model.HoTen) ? "K" : Model.HoTen.Trim()[..1].ToUpper())
+                            </div>
+                        }
+                        <div>
+                            <div class="fw-semibold text-dark">Ảnh đại diện khách hàng</div>
+                            <div class="text-muted small">Khách hàng tự quản lý ảnh đại diện trong hồ sơ cá nhân (chỉ xem, quản trị viên không được xóa hoặc thay đổi).</div>
+                        </div>
+                    </div>
 
                     <div class="mb-3">
                         <label asp-for="HoTen" class="form-label fw-bold">Họ và tên khách hàng <span class="text-danger">*</span></label>

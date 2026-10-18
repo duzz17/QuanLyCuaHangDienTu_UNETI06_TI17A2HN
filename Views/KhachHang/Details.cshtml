@@ -21,17 +21,43 @@
                 <h5 class="mb-0">Thông tin cá nhân</h5>
             </div>
             <div class="card-body">
+                <!-- Khối hiển thị ảnh đại diện và tên khách hàng (Chỉ xem, không sửa/xóa) -->
+                <div class="d-flex align-items-center gap-3 pb-3 mb-3 border-bottom">
+                    <div class="position-relative">
+                        @if (!string.IsNullOrEmpty(Model.HinhAnh))
+                        {
+                            <img src="@Model.HinhAnh" alt="Ảnh đại diện @Model.HoTen" class="rounded-circle shadow-sm" style="width: 80px; height: 80px; object-fit: cover; border: 3px solid #2d6a4f;" />
+                        }
+                        else
+                        {
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white shadow-sm" style="width: 80px; height: 80px; font-size: 2rem; font-weight: 700; background-color: #2d6a4f;">
+                                @(string.IsNullOrWhiteSpace(Model.HoTen) ? "K" : Model.HoTen.Trim()[..1].ToUpper())
+                            </div>
+                        }
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <span class="badge bg-secondary">#KH-@Model.MaKhachHang</span>
+                            @if (Model.TaiKhoan != null)
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    Tài khoản: @Model.TaiKhoan.TenDangNhap
+                                </span>
+                            }
+                            <span class="badge bg-light text-muted border small">
+                                👁️ Ảnh cá nhân (chỉ xem)
+                            </span>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-0">@Model.HoTen</h4>
+                        <small class="text-muted">
+                            @(string.IsNullOrEmpty(Model.HinhAnh) ? "Khách hàng chưa cập nhật ảnh đại diện" : "Ảnh đại diện do khách hàng tự tải lên")
+                        </small>
+                    </div>
+                </div>
+
                 <table class="table table-borderless align-middle mb-0">
                     <tr>
-                        <th style="width: 140px;" class="text-secondary">Mã khách hàng:</th>
-                        <td><span class="badge bg-secondary">#KH-@Model.MaKhachHang</span></td>
-                    </tr>
-                    <tr>
-                        <th class="text-secondary">Họ và tên:</th>
-                        <td class="fw-bold text-dark fs-5">@Model.HoTen</td>
-                    </tr>
-                    <tr>
-                        <th class="text-secondary">Số điện thoại:</th>
+                        <th style="width: 140px;" class="text-secondary">Số điện thoại:</th>
                         <td><strong class="text-primary">@Model.SoDienThoai</strong></td>
                     </tr>
                     <tr>
@@ -42,6 +68,13 @@
                         <th class="text-secondary">Địa chỉ:</th>
                         <td>@(string.IsNullOrWhiteSpace(Model.DiaChi) ? "Chưa cập nhật" : Model.DiaChi)</td>
                     </tr>
+                    @if (Model.NgaySinh.HasValue)
+                    {
+                        <tr>
+                            <th class="text-secondary">Ngày sinh:</th>
+                            <td>@Model.NgaySinh.Value.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                    }
                     <tr>
                         <th class="text-secondary">Ngày đăng ký:</th>
                         <td>@Model.NgayDangKy.ToString("dd/MM/yyyy HH:mm")</td>
