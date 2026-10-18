@@ -19,7 +19,7 @@ public class ChiTietDonHang
     public int SoLuong { get; set; }
 
     [Required(ErrorMessage = "Đơn giá không được để trống")]
-    [Range(typeof(decimal), "0.01", "9999999999999999.99", ErrorMessage = "Đơn giá phải lớn hơn 0")]
+    [Range(typeof(decimal), "1", "9999999999999999", ErrorMessage = "Đơn giá phải lớn hơn 0")]
     [Column(TypeName = "decimal(18,2)")]
     [Display(Name = "Đơn giá")]
     public decimal DonGia { get; set; }

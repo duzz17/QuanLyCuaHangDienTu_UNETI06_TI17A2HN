@@ -42,7 +42,7 @@
 
                 <div class="col-md-3">
                     <label asp-for="Gia" class="form-label fw-bold"></label>
-                    <input asp-for="Gia" class="form-control" type="number" min="0.01" max="9999999999999999.99" step="0.01" placeholder="Nhập giá (> 0)" />
+                    <input asp-for="Gia" class="form-control" type="number" min="1" max="9999999999999999" step="1" placeholder="Nhập giá (> 0)" />
                     <span asp-validation-for="Gia" class="text-danger small"></span>
                 </div>
 

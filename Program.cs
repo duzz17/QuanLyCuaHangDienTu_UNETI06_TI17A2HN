@@ -2,9 +2,17 @@
 // Mã sinh viên: 23103100062
 // Nội dung thực hiện: Cấu hình kết nối SQL Server, đăng ký MVC, Session và pipeline HTTP (Module 1 - M1-02, M1-07)
 
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
+
+// Cấu hình Culture đảm bảo tương thích định dạng số phân cách thập phân chuẩn
+var cultureInfo = new CultureInfo("vi-VN");
+cultureInfo.NumberFormat.NumberDecimalSeparator = ".";
+cultureInfo.NumberFormat.CurrencyDecimalSeparator = ".";
+CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
 var builder = WebApplication.CreateBuilder(args);
 
