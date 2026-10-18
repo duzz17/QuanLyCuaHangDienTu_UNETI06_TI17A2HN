@@ -19,6 +19,7 @@ public static class DbInitializer
         // Tự động tạo cơ sở dữ liệu và áp dụng các Migration mới nhất
         context.Database.Migrate();
         SeedData(context);
+        ChuanHoaDuLieuTiengViet(context);
     }
 
     private static void SeedData(ApplicationDbContext context)
@@ -542,6 +543,115 @@ public static class DbInitializer
                 context.ChiTietDonHangs.AddRange(chiTiet1, chiTiet2);
                 context.SaveChanges();
             }
+        }
+    }
+
+    /// <summary>
+    /// Tự động chuẩn hóa dữ liệu tiếng Việt có dấu cho Loại sản phẩm, Sản phẩm mẫu và Khách hàng mẫu.
+    /// Giúp sửa triệt để lỗi phông chữ (Mojibake / dấu ?) khi nạp dữ liệu từ script SQL cũ.
+    /// </summary>
+    private static void ChuanHoaDuLieuTiengViet(ApplicationDbContext context)
+    {
+        bool hasChanges = false;
+
+        // 1. Chuẩn hóa Loại sản phẩm (Categories)
+        var loaiMap = new Dictionary<int, (string TenLoai, string MoTa)>
+        {
+            { 1, ("Điện thoại & Máy tính bảng", "Điện thoại thông minh, máy tính bảng iPad, Samsung Tab") },
+            { 2, ("Laptop & Máy tính xách tay", "Laptop văn phòng, đồ họa, gaming, mỏng nhẹ") },
+            { 3, ("Tai nghe & Âm thanh", "Tai nghe chụp tai, nhét tai True Wireless, loa Bluetooth cao cấp") },
+            { 4, ("Bàn phím & Chuột", "Bàn phím cơ, chuột công thái học, chuột gaming chuyên nghiệp") },
+            { 5, ("Đồng hồ thông minh", "Smartwatch, Smartband theo dõi sức khỏe và thể thao chuyên nghiệp") }
+        };
+
+        var allLoais = context.LoaiSanPhams.ToList();
+        foreach (var loai in allLoais)
+        {
+            if (loaiMap.TryGetValue(loai.MaLoai, out var info))
+            {
+                if (loai.TenLoai != info.TenLoai || loai.MoTa != info.MoTa)
+                {
+                    loai.TenLoai = info.TenLoai;
+                    loai.MoTa = info.MoTa;
+                    hasChanges = true;
+                }
+            }
+        }
+
+        // 2. Chuẩn hóa Khách hàng mẫu
+        var admin = context.KhachHangs.FirstOrDefault(k => k.Email == "admin@uneti.edu.vn" || k.MaKhachHang == 1);
+        if (admin != null && admin.HoTen != "Quản trị viên Hệ thống")
+        {
+            admin.HoTen = "Quản trị viên Hệ thống";
+            hasChanges = true;
+        }
+
+        var userA = context.KhachHangs.FirstOrDefault(k => k.Email == "nguyenvana@gmail.com" || k.MaKhachHang == 3);
+        if (userA != null && userA.HoTen != "Nguyễn Văn A")
+        {
+            userA.HoTen = "Nguyễn Văn A";
+            hasChanges = true;
+        }
+
+        var userB = context.KhachHangs.FirstOrDefault(k => k.Email.Contains("nguyenvanb") || k.Email.Contains("tranthib") || k.MaKhachHang == 4);
+        if (userB != null && (userB.HoTen.Contains("?") || userB.HoTen.StartsWith("Nguy?n") || userB.HoTen == "Nguyễn Van B"))
+        {
+            userB.HoTen = "Trần Thị B";
+            hasChanges = true;
+        }
+
+        // 3. Chuẩn hóa 25 sản phẩm mẫu
+        var sanPhamMau = new (int Id, string Keyword, string Ten, string ThuongHieu, string XuatXu, string MoTa)[]
+        {
+            (1, "15 Pro Max", "iPhone 15 Pro Max 256GB Titan Tự Nhiên", "Apple", "Mỹ", "Khung viền Titan siêu nhẹ, chip Apple A17 Pro mạnh mẽ nhất thế giới, camera tiềm vọng zoom 5x sắc nét, cổng USB-C tốc độ cao."),
+            (2, "S24 Ultra", "Samsung Galaxy S24 Ultra 5G 512GB", "Samsung", "Hàn Quốc", "Tích hợp quyền năng Galaxy AI thông minh, bút S-Pen quyền năng, màn hình phẳng Dynamic AMOLED 2X 120Hz chống chói đỉnh cao."),
+            (3, "14 Ultra", "Xiaomi 14 Ultra 5G 16GB/512GB", "Xiaomi", "Trung Quốc", "Hệ thống 4 camera quang học Leica đỉnh cao cảm biến 1-inch, Snapdragon 8 Gen 3 siêu tốc, sạc HyperCharge 90W nhanh ấn tượng."),
+            (4, "iPad Pro", "iPad Pro 11 inch M4 Wi-Fi 256GB", "Apple", "Mỹ", "Thiết kế mỏng kỷ lục 5.3mm, chip Apple M4 thế hệ mới, màn hình Ultra Retina XDR Tandem OLED tuyệt mỹ, tương thích Apple Pencil Pro."),
+            (5, "Tab S9 Ultra", "Samsung Galaxy Tab S9 Ultra 5G", "Samsung", "Hàn Quốc", "Màn hình cực đại 14.6 inch sắc nét, chuẩn kháng nước kháng bụi IP68, xử lý đa nhiệm xuất sắc thay thế máy tính bảng thông thường."),
+            (6, "MacBook Pro", "MacBook Pro 14 inch M3 Pro 18GB/512GB", "Apple", "Mỹ", "Chip Apple M3 Pro 11-core CPU, 14-core GPU, màn hình Liquid Retina XDR 120Hz ProMotion, thời lượng pin sử dụng liên tục đến 18 giờ."),
+            (7, "XPS 15", "Laptop Dell XPS 15 9530 Core i7-13700H", "Dell", "Mỹ", "Vi xử lý Intel Core i7-13700H thế hệ 13, RAM 16GB DDR5, SSD 512GB, card đồ họa rời NVIDIA RTX 4050 6GB GDDR6, màn hình OLED viền mỏng."),
+            (8, "Zephyrus G16", "Laptop Asus ROG Zephyrus G16 OLED Gaming", "Asus", "Đài Loan", "Laptop Gaming siêu mỏng cao cấp, màn hình ROG Nebula OLED 2.5K 240Hz, vi xử lý Intel Core Ultra 9 185H, đồ họa NVIDIA GeForce RTX 4070."),
+            (9, "ThinkPad X1", "Lenovo ThinkPad X1 Carbon Gen 11 Core i7", "Lenovo", "Trung Quốc", "Vỏ sợi carbon siêu bền chuẩn quân sự Mỹ, bàn phím gõ êm nhất thế giới, trọng lượng chỉ 1.12kg, bảo hành chính hãng tận nơi 3 năm."),
+            (10, "Swift Go 14", "Laptop Acer Swift Go 14 AI OLED Intel Core Ultra 5", "Acer", "Đài Loan", "Màn hình OLED 2.8K 90Hz rực rỡ, tích hợp bộ xử lý AI Intel NPU, thiết kế vỏ nhôm mỏng nhẹ sang trọng, pin dùng cả ngày."),
+            (11, "WH-1000XM5", "Tai nghe Chống ồn Sony WH-1000XM5 Hi-Res", "Sony", "Nhật Bản", "Công nghệ chống ồn chủ động kép với 8 micro lọc âm, chất âm chuẩn Hi-Res Audio, thời lượng pin 30 giờ, kết nối đa thiết bị."),
+            (12, "AirPods Pro 2", "Tai nghe Apple AirPods Pro 2 USB-C MagSafe", "Apple", "Mỹ", "Chip xử lý Apple H2 nâng cao khả năng chống ồn gấp 2 lần, âm thanh thích ứng Adaptive Audio, chuẩn kháng nước IP54 tiện lợi."),
+            (13, "Stanmore III", "Loa Bluetooth Marshall Stanmore III Chính Hãng", "Marshall", "Anh", "Âm trường rộng hơn bao giờ hết đặc trưng phong cách Rock Marshall, núm vặn analog mạ vàng cổ điển, hỗ trợ Bluetooth 5.2 và AUX 3.5mm."),
+            (14, "Charge 5", "Loa Di Động Chống Nước JBL Charge 5", "JBL", "Mỹ", "Chất âm sống động JBL Original Pro Sound, màng loa bass kép uy lực, chuẩn chống nước bụi IP67, pin trâu 20 giờ có tính năng sạc dự phòng."),
+            (15, "G Pro X 2", "Tai nghe Gaming Không dây Logitech G Pro X 2 LIGHTSPEED", "Logitech", "Thụy Sĩ", "Màng loa Graphene 50mm cách mạng, định vị âm thanh không gian chuẩn xác trong trận đấu, kết nối LIGHTSPEED siêu nhanh không độ trễ."),
+            (16, "MX Keys S", "Bàn phím cơ không dây Logitech MX Keys S", "Logitech", "Thụy Sĩ", "Phím bấm thiết kế lõm công thái học gõ cực êm và chính xác, đèn nền tự động cảm biến tiệm cận bàn tay, kết nối mượt 3 thiết bị cùng lúc."),
+            (17, "MX Master 3S", "Chuột công thái học cao cấp Logitech MX Master 3S", "Logitech", "Thụy Sĩ", "Cuộn bánh xe từ tính MagSpeed 1000 dòng/giây, công nghệ Quiet Clicks giảm 90% tiếng ồn, cảm biến quang học 8000 DPI lướt mượt trên mặt kính."),
+            (18, "5075B", "Bàn phím cơ Custom Akko 5075B Plus v2 Multi-Modes", "Akko", "Trung Quốc", "Cấu trúc Gasket Mount êm ái đàn hồi, mạch Hotswap 5 pin thay switch nhanh chóng, đèn LED RGB từng phím kèm dải viền thời thượng."),
+            (19, "Viper V2 Pro", "Chuột Gaming Không dây Siêu nhẹ Razer Viper V2 Pro", "Razer", "Singapore", "Trọng lượng siêu nhẹ chỉ 58g tối ưu cho tuyển thủ eSports, cảm biến quang học Focus Pro 30K, switch bấm quang học Gen 3 không lo double-click."),
+            (20, "K70 RGB PRO", "Bàn phím cơ Gaming Corsair K70 RGB PRO Cherry MX Red", "Corsair", "Mỹ", "Khung nhôm phay xước chuẩn hàng không vũ trụ, công nghệ xử lý siêu tốc AXON 8000Hz, keycap PBT double-shot chống mài mòn bóng mờ."),
+            (21, "Watch Ultra 2", "Apple Watch Ultra 2 GPS + Cellular 49mm Titan", "Apple", "Mỹ", "Vỏ Titan chuẩn quân sự chống va đập, màn hình sáng kỷ lục 3000 nits, định vị GPS tần số kép L1/L5 cực chuẩn cho leo núi và lặn biển."),
+            (22, "Watch 6 Classic", "Samsung Galaxy Watch 6 Classic 47mm LTE", "Samsung", "Hàn Quốc", "Vòng xoay bezel xoay cơ học độc đáo, kính Sapphire chống trầy, đo điện tâm đồ ECG, phân tích thành phần cơ thể BIA và giấc ngủ."),
+            (23, "Fenix 7 Pro", "Đồng hồ Thể thao Garmin Fenix 7 Pro Sapphire Solar", "Garmin", "Mỹ", "Kính sạc năng lượng mặt trời Sapphire cao cấp, đèn pin LED tích hợp, bản đồ địa hình màu TOPO, thời lượng pin lên đến 37 ngày."),
+            (24, "Watch 2 Pro", "Đồng hồ thông minh Xiaomi Watch 2 Pro Khung thép", "Xiaomi", "Trung Quốc", "Chạy hệ điều hành Google Wear OS mượt mà, chip Snapdragon W5+ Gen 1 tiến trình 4nm hiện đại, hơn 150 chế độ thể thao chuyên sâu."),
+            (25, "Band 9", "Vòng đeo tay thông minh Huawei Band 9 Siêu nhẹ", "Huawei", "Trung Quốc", "Trọng lượng siêu nhẹ chỉ 14g mỏng 8.99mm, theo dõi giấc ngủ khoa học HUAWEI TruSleep 4.0, pin bền bỉ đến 14 ngày không lo hết pin.")
+        };
+
+        var allSanPhams = context.SanPhams.ToList();
+        foreach (var item in sanPhamMau)
+        {
+            var sp = allSanPhams.FirstOrDefault(s => s.MaSanPham == item.Id)
+                  ?? allSanPhams.FirstOrDefault(s => s.TenSanPham.Contains(item.Keyword, StringComparison.OrdinalIgnoreCase));
+
+            if (sp != null)
+            {
+                if (sp.TenSanPham != item.Ten || sp.MoTa != item.MoTa || sp.ThuongHieu != item.ThuongHieu || sp.XuatXu != item.XuatXu)
+                {
+                    sp.TenSanPham = item.Ten;
+                    sp.MoTa = item.MoTa;
+                    sp.ThuongHieu = item.ThuongHieu;
+                    sp.XuatXu = item.XuatXu;
+                    hasChanges = true;
+                }
+            }
+        }
+
+        if (hasChanges)
+        {
+            context.SaveChanges();
         }
     }
 }
