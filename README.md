@@ -14,7 +14,7 @@ Yêu cầu:
 * Git
 * .NET SDK
 * Visual Studio 2022 hoặc VS Code
-* SQL Server (nếu sử dụng Database)
+* Không cần cài SQL Server. Ứng dụng sử dụng SQLite đi kèm project.
 
 Kiểm tra:
 
@@ -45,16 +45,22 @@ Hoặc mở file `.sln` bằng Visual Studio và nhấn **F5**.
 
 ## 6. Database
 
-Nếu project sử dụng Database, hãy cấu hình `ConnectionStrings` trong:
+Ứng dụng lưu dữ liệu trong tệp:
 
 ```text
-appsettings.json
+Data/QuanLyCuaHangDienTu.db
 ```
 
-Sau đó chạy migration nếu cần:
+Không cần cài SQL Server, cấu hình connection string hoặc chạy `dotnet ef database update`.
+Khi mở project trên máy mới, ứng dụng tự tạo database và nạp dữ liệu mẫu nếu tệp chưa tồn tại.
+
+Muốn chuyển cả dữ liệu đã nhập sang máy khác, hãy sao chép toàn bộ project sau khi đã tắt ứng dụng.
+Tệp `.db` sẽ đi cùng project. Không sao chép các tệp tạm có đuôi `.db-wal` hoặc `.db-shm` khi ứng dụng đang chạy.
+
+Muốn tạo lại dữ liệu mẫu từ đầu, hãy tắt ứng dụng, xóa `Data/QuanLyCuaHangDienTu.db` rồi chạy lại:
 
 ```bash
-dotnet ef database update
+dotnet run
 ```
 
 ## 7. Làm việc với Git

@@ -1,10 +1,9 @@
 // Họ và tên: Nguyễn Xuân Đức
 // Mã sinh viên: 23103100062
-// Nội dung thực hiện: Cấu hình kết nối SQL Server, đăng ký MVC, Session và pipeline HTTP (Module 1 - M1-02, M1-07)
+// Nội dung thực hiện: Cấu hình cơ sở dữ liệu, đăng ký MVC, Session và pipeline HTTP (Module 1 - M1-02, M1-07)
 
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 
 // Cấu hình Culture đảm bảo tương thích định dạng số phân cách thập phân chuẩn
@@ -16,11 +15,14 @@ CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Kết nối SQL Server
+var databaseDirectory = Path.Combine(builder.Environment.ContentRootPath, "Data");
+Directory.CreateDirectory(databaseDirectory);
+var databasePath = Path.Combine(databaseDirectory, "QuanLyCuaHangDienTu.db");
+
+// SQLite lưu toàn bộ dữ liệu trong một tệp đi cùng ứng dụng và không cần cài SQL Server.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-    options.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+    options.UseSqlite($"Data Source={databasePath}");
 });
 
 // Cấu hình Session (M1-02, M1-07)
@@ -40,19 +42,20 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Khởi tạo CSDL & Khởi tạo dữ liệu mẫu nếu chưa có
-using (var scope = app.Services.CreateScope())
+// Tự tạo CSDL và dữ liệu mẫu khi chạy trên máy mới.
+await using (var scope = app.Services.CreateAsyncScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        DbInitializer.Initialize(context);
+        await DbInitializer.InitializeAsync(context);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "Có lỗi xảy ra trong quá trình khởi tạo CSDL.");
+        throw;
     }
 }
 

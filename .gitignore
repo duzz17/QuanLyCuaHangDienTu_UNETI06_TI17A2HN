@@ -8,3 +8,7 @@
 appsettings.Development.json
 *.log
 *.bak
+
+# SQLite tạo tự động khi chạy. Bỏ dòng này nếu muốn commit cả dữ liệu phát sinh.
+Data/*.db-shm
+Data/*.db-wal

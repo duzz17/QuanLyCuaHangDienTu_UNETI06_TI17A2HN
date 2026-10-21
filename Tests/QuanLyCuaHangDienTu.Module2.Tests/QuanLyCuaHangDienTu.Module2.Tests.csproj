@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <Compile Include="*.cs" />
-    <ProjectReference Include="..\..\..csproj" />
+    <ProjectReference Include="..\..\QuanLyCuaHangDienTu_UNETI06_TI17A2HN.csproj" />
   </ItemGroup>
 
 </Project>

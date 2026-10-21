@@ -87,17 +87,32 @@ public class ApplicationDbContext : DbContext
             .Property(s => s.TrangThai)
             .HasConversion<int>();
 
+        var isSqlite = Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite";
         modelBuilder.Entity<SanPham>()
             .ToTable(t =>
             {
-                t.HasCheckConstraint("CK_SanPhams_TenSanPham", "LEN(LTRIM(RTRIM([TenSanPham]))) > 0");
-                t.HasCheckConstraint("CK_SanPhams_ThuongHieu", "LEN(LTRIM(RTRIM([ThuongHieu]))) > 0");
-                t.HasCheckConstraint("CK_SanPhams_Gia", "[Gia] > 0");
-                t.HasCheckConstraint("CK_SanPhams_SoLuong", "[SoLuong] >= 0");
-                t.HasCheckConstraint("CK_SanPhams_ThoiGianBaoHanh", "[ThoiGianBaoHanh] BETWEEN 0 AND 120");
-                t.HasCheckConstraint("CK_SanPhams_TrangThai", "[TrangThai] IN (0, 1, 2)");
-                t.HasCheckConstraint("CK_SanPhams_XuatXu", "LEN(LTRIM(RTRIM([XuatXu]))) > 0");
-                t.HasCheckConstraint("CK_SanPhams_NgayNhap", "[NgayNhap] >= '2000-01-01'");
+                if (isSqlite)
+                {
+                    t.HasCheckConstraint("CK_SanPhams_TenSanPham", "length(trim(\"TenSanPham\")) > 0");
+                    t.HasCheckConstraint("CK_SanPhams_ThuongHieu", "length(trim(\"ThuongHieu\")) > 0");
+                    t.HasCheckConstraint("CK_SanPhams_Gia", "\"Gia\" > 0");
+                    t.HasCheckConstraint("CK_SanPhams_SoLuong", "\"SoLuong\" >= 0");
+                    t.HasCheckConstraint("CK_SanPhams_ThoiGianBaoHanh", "\"ThoiGianBaoHanh\" BETWEEN 0 AND 120");
+                    t.HasCheckConstraint("CK_SanPhams_TrangThai", "\"TrangThai\" IN (0, 1, 2)");
+                    t.HasCheckConstraint("CK_SanPhams_XuatXu", "length(trim(\"XuatXu\")) > 0");
+                    t.HasCheckConstraint("CK_SanPhams_NgayNhap", "date(\"NgayNhap\") >= '2000-01-01'");
+                }
+                else
+                {
+                    t.HasCheckConstraint("CK_SanPhams_TenSanPham", "LEN(LTRIM(RTRIM([TenSanPham]))) > 0");
+                    t.HasCheckConstraint("CK_SanPhams_ThuongHieu", "LEN(LTRIM(RTRIM([ThuongHieu]))) > 0");
+                    t.HasCheckConstraint("CK_SanPhams_Gia", "[Gia] > 0");
+                    t.HasCheckConstraint("CK_SanPhams_SoLuong", "[SoLuong] >= 0");
+                    t.HasCheckConstraint("CK_SanPhams_ThoiGianBaoHanh", "[ThoiGianBaoHanh] BETWEEN 0 AND 120");
+                    t.HasCheckConstraint("CK_SanPhams_TrangThai", "[TrangThai] IN (0, 1, 2)");
+                    t.HasCheckConstraint("CK_SanPhams_XuatXu", "LEN(LTRIM(RTRIM([XuatXu]))) > 0");
+                    t.HasCheckConstraint("CK_SanPhams_NgayNhap", "[NgayNhap] >= '2000-01-01'");
+                }
             });
 
         // Tổng tiền đơn hàng

@@ -9,15 +9,14 @@ public static class DbInitializer
 {
     public static async Task InitializeAsync(ApplicationDbContext context)
     {
-        // Tự động tạo cơ sở dữ liệu và áp dụng các Migration mới nhất
-        await context.Database.MigrateAsync();
+        await context.Database.EnsureCreatedAsync();
         SeedData(context);
+        ChuanHoaDuLieuTiengViet(context);
     }
 
     public static void Initialize(ApplicationDbContext context)
     {
-        // Tự động tạo cơ sở dữ liệu và áp dụng các Migration mới nhất
-        context.Database.Migrate();
+        context.Database.EnsureCreated();
         SeedData(context);
         ChuanHoaDuLieuTiengViet(context);
     }
