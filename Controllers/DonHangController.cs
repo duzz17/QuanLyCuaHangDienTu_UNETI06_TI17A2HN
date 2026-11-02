@@ -1,3 +1,4 @@
+using ClosedXML.Excel;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -107,9 +108,30 @@ public class DonHangController : Controller
     // GET: /DonHang/DatHang (Trang thông tin đặt hàng / Checkout)
     [HttpGet]
     [ProtectedRoute]
-    public async Task<IActionResult> DatHang()
+    public async Task<IActionResult> DatHang(bool direct = false)
     {
-        var cart = GetCartFromSession();
+        List<CartItemViewModel> cart;
+        var buyNowJson = HttpContext.Session.GetString("MUA_NGAY_SESSION");
+        bool isDirect = direct && !string.IsNullOrEmpty(buyNowJson);
+
+        if (isDirect)
+        {
+            try
+            {
+                var item = JsonSerializer.Deserialize<CartItemViewModel>(buyNowJson!);
+                cart = item != null ? new List<CartItemViewModel> { item } : GetCartFromSession();
+            }
+            catch
+            {
+                cart = GetCartFromSession();
+            }
+        }
+        else
+        {
+            HttpContext.Session.Remove("MUA_NGAY_SESSION");
+            cart = GetCartFromSession();
+        }
+
         if (!cart.Any())
         {
             TempData["Loi"] = "Giỏ hàng của bạn đang trống! Vui lòng chọn sản phẩm trước khi đặt hàng.";
@@ -127,14 +149,27 @@ public class DonHangController : Controller
                 cartUpdated = true;
             }
         }
-        if (cartUpdated)
+        if (cartUpdated && !isDirect)
         {
             HttpContext.Session.SetString(CART_KEY, JsonSerializer.Serialize(cart));
         }
+        else if (cartUpdated && isDirect && cart.Count == 1)
+        {
+            HttpContext.Session.SetString("MUA_NGAY_SESSION", JsonSerializer.Serialize(cart[0]));
+        }
+
+        var coupon = HttpContext.Session.GetString(GioHangController.COUPON_KEY);
+        var subTotal = cart.Sum(i => i.ThanhTien);
+        var discount = GioHangController.CalculateDiscount(subTotal, coupon);
 
         var model = new DatHangViewModel
         {
-            GioHang = new GioHangViewModel { Items = cart }
+            GioHang = new GioHangViewModel
+            {
+                Items = cart,
+                MaGiamGia = coupon,
+                SoTienGiam = discount
+            }
         };
 
         // Nếu đã đăng nhập và là khách hàng, pre-fill thông tin
@@ -159,9 +194,29 @@ public class DonHangController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [ProtectedRoute]
-    public async Task<IActionResult> DatHang(DatHangViewModel model)
+    public async Task<IActionResult> DatHang(DatHangViewModel model, bool direct = false)
     {
-        var cart = GetCartFromSession();
+        List<CartItemViewModel> cart;
+        var buyNowJson = HttpContext.Session.GetString("MUA_NGAY_SESSION");
+        bool isDirect = (direct || !string.IsNullOrEmpty(buyNowJson)) && !string.IsNullOrEmpty(buyNowJson);
+
+        if (isDirect)
+        {
+            try
+            {
+                var item = JsonSerializer.Deserialize<CartItemViewModel>(buyNowJson!);
+                cart = item != null ? new List<CartItemViewModel> { item } : GetCartFromSession();
+            }
+            catch
+            {
+                cart = GetCartFromSession();
+                isDirect = false;
+            }
+        }
+        else
+        {
+            cart = GetCartFromSession();
+        }
         if (!cart.Any())
         {
             TempData["Loi"] = "Giỏ hàng của bạn đang trống!";
@@ -270,14 +325,24 @@ public class DonHangController : Controller
                 return View(model);
             }
 
-            // 3. Tạo đơn hàng mới với Tổng tiền tính từ Server
+            // 3. Tạo đơn hàng mới với Tổng tiền tính từ Server (Áp dụng Voucher nếu có)
+            var couponCode = HttpContext.Session.GetString(GioHangController.COUPON_KEY);
+            decimal discountAmount = GioHangController.CalculateDiscount(tongTienServer, couponCode);
+            decimal tongTienSauGiam = Math.Max(0, tongTienServer - discountAmount);
+
+            var diaChiNhanHang = model.DiaChiGiaoHang.Trim();
+            if (!string.IsNullOrEmpty(couponCode) && discountAmount > 0)
+            {
+                diaChiNhanHang += $" [Đã áp dụng Voucher: {couponCode} (-{discountAmount:N0}đ)]";
+            }
+
             var donHang = new DonHang
             {
                 MaKhachHang = khachHang.MaKhachHang,
                 NgayDat = DateTime.Now,
-                TongTien = tongTienServer,
+                TongTien = tongTienSauGiam,
                 TrangThai = "ChoXacNhan",
-                DiaChiGiaoHang = model.DiaChiGiaoHang.Trim(),
+                DiaChiGiaoHang = diaChiNhanHang,
                 SoDienThoaiGiaoHang = model.SoDienThoai.Trim()
             };
             _context.DonHangs.Add(donHang);
@@ -293,8 +358,17 @@ public class DonHangController : Controller
 
             await transaction.CommitAsync();
 
-            // Xóa giỏ hàng Session sau khi đặt thành công
-            HttpContext.Session.Remove(CART_KEY);
+            if (isDirect)
+            {
+                // Mua ngay hoàn tất -> Xóa session Mua Ngay (Giỏ hàng chính được bảo lưu nguyên vẹn)
+                HttpContext.Session.Remove("MUA_NGAY_SESSION");
+            }
+            else
+            {
+                // Đặt hàng từ giỏ hàng -> Xóa giỏ hàng Session
+                HttpContext.Session.Remove(CART_KEY);
+            }
+            HttpContext.Session.Remove(GioHangController.COUPON_KEY);
 
             TempData["ThongBao"] = $"Đặt hàng thành công! Mã đơn hàng của bạn là #{donHang.MaDonHang}.";
             return RedirectToAction(nameof(Details), new { id = donHang.MaDonHang });
@@ -435,5 +509,96 @@ public class DonHangController : Controller
 
         TempData["ThongBao"] = $"Hủy đơn hàng #{donHang.MaDonHang} thành công!";
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    // GET: /DonHang/XuatExcel (Xuất danh sách đơn hàng ra Excel - Chức năng nâng cao)
+    [HttpGet]
+    [AdminOnly]
+    public async Task<IActionResult> XuatExcel()
+    {
+        var donHangs = await _context.DonHangs
+            .Include(d => d.KhachHang)
+            .OrderByDescending(d => d.NgayDat)
+            .ToListAsync();
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Danh sách đơn hàng");
+
+        worksheet.Cell(1, 1).Value = "DANH SÁCH ĐƠN HÀNG CỬA HÀNG ĐIỆN TỬ";
+        worksheet.Cell(1, 1).Style.Font.Bold = true;
+        worksheet.Cell(1, 1).Style.Font.FontSize = 16;
+        worksheet.Range(1, 1, 1, 7).Merge().Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+
+        worksheet.Cell(2, 1).Value = $"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm} | Tổng số: {donHangs.Count} đơn hàng";
+        worksheet.Range(2, 1, 2, 7).Merge().Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+
+        string[] headers = [ "STT", "Mã ĐH", "Khách hàng", "Số điện thoại", "Ngày đặt", "Tổng tiền (VNĐ)", "Trạng thái" ];
+        for (int i = 0; i < headers.Length; i++)
+        {
+            var cell = worksheet.Cell(4, i + 1);
+            cell.Value = headers[i];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#1B365D");
+            cell.Style.Font.FontColor = XLColor.White;
+            cell.Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+        }
+
+        int row = 5;
+        for (int idx = 0; idx < donHangs.Count; idx++)
+        {
+            var dh = donHangs[idx];
+            worksheet.Cell(row, 1).Value = idx + 1;
+            worksheet.Cell(row, 2).Value = $"#DH{dh.MaDonHang:D5}";
+            worksheet.Cell(row, 3).Value = dh.KhachHang?.HoTen ?? "Khách vãng lai";
+            worksheet.Cell(row, 4).Value = dh.KhachHang?.SoDienThoai ?? "";
+            worksheet.Cell(row, 5).Value = dh.NgayDat.ToString("dd/MM/yyyy HH:mm");
+            worksheet.Cell(row, 6).Value = dh.TongTien;
+            worksheet.Cell(row, 6).Style.NumberFormat.Format = "#,##0";
+            worksheet.Cell(row, 7).Value = dh.TrangThai switch
+            {
+                "ChoXacNhan" => "Chờ xác nhận",
+                "DaXacNhan" => "Đã xác nhận",
+                "DangGiao" => "Đang giao",
+                "DaHoanThanh" => "Đã hoàn thành",
+                "DaHuy" => "Đã hủy",
+                _ => dh.TrangThai
+            };
+            row++;
+        }
+
+        worksheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        var content = stream.ToArray();
+
+        return File(
+            content,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"DanhSachDonHang_{DateTime.Now:yyyyMMdd_HHmm}.xlsx");
+    }
+
+    // GET: /DonHang/InHoaDon/{id} (In / Xuất hóa đơn PDF - Chức năng nâng cao)
+    [HttpGet]
+    [ProtectedRoute]
+    public async Task<IActionResult> InHoaDon(int id)
+    {
+        var donHang = await _context.DonHangs
+            .Include(d => d.KhachHang)
+            .Include(d => d.ChiTietDonHangs)
+                .ThenInclude(ct => ct.SanPham)
+            .FirstOrDefaultAsync(d => d.MaDonHang == id);
+
+        if (donHang == null)
+            return NotFound();
+
+        var vaiTro = HttpContext.Session.GetString("VaiTro");
+        var maKhachHangSession = HttpContext.Session.GetInt32("MaKhachHang");
+        if (vaiTro != "Admin" && donHang.MaKhachHang != maKhachHangSession)
+        {
+            return Forbid();
+        }
+
+        return View(donHang);
     }
 }

@@ -1,8 +1,9 @@
-// Họ và tên: Phạm Văn Cường - MSSV: 23103100094
+// Họ và tên: Phạm Văn Cương - MSSV: 23103100094
 // Nội dung thực hiện: CRUD, tìm kiếm, lọc, sắp xếp và phân trang sản phẩm (Module 2)
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using ClosedXML.Excel;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Data;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models;
 using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Filters;
@@ -273,8 +274,39 @@ public class SanPhamController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(
         [Bind("TenSanPham,ThuongHieu,XuatXu,MoTa,Gia,SoLuong,ThoiGianBaoHanh,TrangThai,HinhAnh,NgayNhap,MaLoai")]
-        SanPham sanPham)
+        SanPham sanPham,
+        IFormFile? fileAnh = null)
     {
+        // Xử lý upload ảnh sản phẩm (Chức năng nâng cao)
+        if (fileAnh != null && fileAnh.Length > 0)
+        {
+            var ext = Path.GetExtension(fileAnh.FileName).ToLowerInvariant();
+            var allowedExts = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+            if (!allowedExts.Contains(ext))
+            {
+                ModelState.AddModelError("HinhAnh", "Chỉ chấp nhận file ảnh định dạng .jpg, .jpeg, .png, .webp, .gif");
+            }
+            else if (fileAnh.Length > 5 * 1024 * 1024)
+            {
+                ModelState.AddModelError("HinhAnh", "Kích thước file ảnh không được vượt quá 5MB");
+            }
+            else
+            {
+                var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "products");
+                if (!Directory.Exists(uploadDir))
+                    Directory.CreateDirectory(uploadDir);
+
+                var fileName = $"{Guid.NewGuid():N}{ext}";
+                var filePath = Path.Combine(uploadDir, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await fileAnh.CopyToAsync(stream);
+                }
+                sanPham.HinhAnh = $"/images/products/{fileName}";
+                ModelState.Remove(nameof(sanPham.HinhAnh));
+            }
+        }
+
         // Loại bỏ validation đối với navigation property
         ModelState.Remove(nameof(sanPham.LoaiSanPham));
 
@@ -298,7 +330,8 @@ public class SanPhamController : Controller
     public async Task<IActionResult> Edit(
         int id,
         [Bind("MaSanPham,TenSanPham,ThuongHieu,XuatXu,MoTa,Gia,SoLuong,ThoiGianBaoHanh,TrangThai,HinhAnh,NgayNhap,MaLoai")]
-        SanPham sanPham)
+        SanPham sanPham,
+        IFormFile? fileAnh = null)
     {
         if (id != sanPham.MaSanPham)
         {
@@ -308,6 +341,41 @@ public class SanPhamController : Controller
         var sanPhamHienTai = await _context.SanPhams.FirstOrDefaultAsync(s => s.MaSanPham == id);
         if (sanPhamHienTai is null)
             return NotFound();
+
+        // Xử lý upload ảnh sản phẩm mới nếu có
+        if (fileAnh != null && fileAnh.Length > 0)
+        {
+            var ext = Path.GetExtension(fileAnh.FileName).ToLowerInvariant();
+            var allowedExts = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+            if (!allowedExts.Contains(ext))
+            {
+                ModelState.AddModelError("HinhAnh", "Chỉ chấp nhận file ảnh định dạng .jpg, .jpeg, .png, .webp, .gif");
+            }
+            else if (fileAnh.Length > 5 * 1024 * 1024)
+            {
+                ModelState.AddModelError("HinhAnh", "Kích thước file ảnh không được vượt quá 5MB");
+            }
+            else
+            {
+                var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "products");
+                if (!Directory.Exists(uploadDir))
+                    Directory.CreateDirectory(uploadDir);
+
+                var fileName = $"{Guid.NewGuid():N}{ext}";
+                var filePath = Path.Combine(uploadDir, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await fileAnh.CopyToAsync(stream);
+                }
+                sanPham.HinhAnh = $"/images/products/{fileName}";
+                ModelState.Remove(nameof(sanPham.HinhAnh));
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(sanPham.HinhAnh))
+        {
+            sanPham.HinhAnh = sanPhamHienTai.HinhAnh;
+            ModelState.Remove(nameof(sanPham.HinhAnh));
+        }
 
         ModelState.Remove(nameof(sanPham.LoaiSanPham));
 
@@ -340,8 +408,73 @@ public class SanPhamController : Controller
             }
         }
 
-        ViewData["MaLoai"] = await CreateLoaiSanPhamSelectListAsync(sanPham.MaLoai);
+        ViewData["MaLoai"] = await CreateLoaiSanPhamSelectListAsync(sanPham.MaLoai, includeInactive: true);
         return View(sanPham);
+    }
+
+    // GET: /SanPham/XuatExcel (Xuất danh sách sản phẩm ra Excel - Chức năng nâng cao)
+    [HttpGet]
+    [AdminOnly]
+    public async Task<IActionResult> XuatExcel()
+    {
+        var sanPhams = await _context.SanPhams
+            .AsNoTracking()
+            .Include(s => s.LoaiSanPham)
+            .OrderBy(s => s.MaSanPham)
+            .ToListAsync();
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Danh sách sản phẩm");
+
+        // Tiêu đề
+        worksheet.Cell(1, 1).Value = "DANH SÁCH SẢN PHẨM CỬA HÀNG ĐIỆN TỬ";
+        worksheet.Cell(1, 1).Style.Font.Bold = true;
+        worksheet.Cell(1, 1).Style.Font.FontSize = 16;
+        worksheet.Range(1, 1, 1, 9).Merge().Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+
+        worksheet.Cell(2, 1).Value = $"Ngày xuất: {DateTime.Now:dd/MM/yyyy HH:mm} | Tổng số: {sanPhams.Count} sản phẩm";
+        worksheet.Range(2, 1, 2, 9).Merge().Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+
+        // Header bảng
+        string[] headers = [ "STT", "Mã SP", "Tên sản phẩm", "Loại sản phẩm", "Thương hiệu", "Xuất xứ", "Đơn giá (VNĐ)", "Tồn kho", "Trạng thái" ];
+        for (int i = 0; i < headers.Length; i++)
+        {
+            var cell = worksheet.Cell(4, i + 1);
+            cell.Value = headers[i];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#1B365D");
+            cell.Style.Font.FontColor = XLColor.White;
+            cell.Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+        }
+
+        // Dữ liệu
+        int row = 5;
+        for (int idx = 0; idx < sanPhams.Count; idx++)
+        {
+            var sp = sanPhams[idx];
+            worksheet.Cell(row, 1).Value = idx + 1;
+            worksheet.Cell(row, 2).Value = sp.MaSanPham;
+            worksheet.Cell(row, 3).Value = sp.TenSanPham;
+            worksheet.Cell(row, 4).Value = sp.LoaiSanPham?.TenLoai ?? "N/A";
+            worksheet.Cell(row, 5).Value = sp.ThuongHieu;
+            worksheet.Cell(row, 6).Value = sp.XuatXu;
+            worksheet.Cell(row, 7).Value = sp.Gia;
+            worksheet.Cell(row, 7).Style.NumberFormat.Format = "#,##0";
+            worksheet.Cell(row, 8).Value = sp.SoLuong;
+            worksheet.Cell(row, 9).Value = GetTrangThaiText(sp.TrangThai);
+            row++;
+        }
+
+        worksheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        var content = stream.ToArray();
+
+        return File(
+            content,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"DanhSachSanPham_{DateTime.Now:yyyyMMdd_HHmm}.xlsx");
     }
     [HttpPost]
     [AdminOnly]

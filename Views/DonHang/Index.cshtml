@@ -26,10 +26,11 @@
                     <label class="form-label fw-bold">Trạng thái đơn hàng</label>
                     <select name="trangThai" class="form-select">
                         <option value="">-- Tất cả trạng thái --</option>
-                        <option value="ChoXacNhan" selected="@(ViewBag.CurrentTrangThai == "ChoXacNhan" ? "selected" : null)">Chờ xác nhận</option>
-                        <option value="DangGiao" selected="@(ViewBag.CurrentTrangThai == "DangGiao" ? "selected" : null)">Đang giao hàng</option>
-                        <option value="DaGiao" selected="@(ViewBag.CurrentTrangThai == "DaGiao" ? "selected" : null)">Đã hoàn thành (Giao thành công)</option>
-                        <option value="DaHuy" selected="@(ViewBag.CurrentTrangThai == "DaHuy" ? "selected" : null)">Đã hủy</option>
+                        <option value="ChoXacNhan" selected="@(ViewBag.CurrentTrangThai == "ChoXacNhan" ? "selected" : null)">⏳ Chờ xác nhận</option>
+                        <option value="DaXacNhan" selected="@(ViewBag.CurrentTrangThai == "DaXacNhan" ? "selected" : null)">✔️ Đã xác nhận</option>
+                        <option value="DangGiao" selected="@(ViewBag.CurrentTrangThai == "DangGiao" ? "selected" : null)">🚚 Đang giao hàng</option>
+                        <option value="DaGiao" selected="@(ViewBag.CurrentTrangThai == "DaGiao" || ViewBag.CurrentTrangThai == "DaHoanThanh" ? "selected" : null)">✅ Đã hoàn thành</option>
+                        <option value="DaHuy" selected="@(ViewBag.CurrentTrangThai == "DaHuy" ? "selected" : null)">❌ Đã hủy</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -96,10 +97,14 @@ else
                                 case "ChoXacNhan":
                                     <span class="badge bg-warning text-dark p-2">⏳ Chờ xác nhận</span>
                                     break;
+                                case "DaXacNhan":
+                                    <span class="badge bg-primary p-2">✔️ Đã xác nhận</span>
+                                    break;
                                 case "DangGiao":
                                     <span class="badge bg-info text-dark p-2">🚚 Đang giao hàng</span>
                                     break;
                                 case "DaGiao":
+                                case "DaHoanThanh":
                                     <span class="badge bg-success p-2">✅ Đã hoàn thành</span>
                                     break;
                                 case "DaHuy":

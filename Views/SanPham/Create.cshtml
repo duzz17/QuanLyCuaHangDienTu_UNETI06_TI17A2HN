@@ -1,5 +1,5 @@
 @* Họ và tên: Phạm Văn Cường - MSSV: 23103100094
-   Nội dung thực hiện: Giao diện thêm mới và validation sản phẩm (Module 2). *@
+   Nội dung thực hiện: Giao diện thêm mới và validation sản phẩm (Module 2). Tích hợp Upload ảnh (Chức năng nâng cao). *@
 @model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.SanPham
 
 @{
@@ -10,7 +10,7 @@
 
 <div class="card shadow-sm border-0">
     <div class="card-body p-4">
-        <form asp-action="Create" method="post">
+        <form asp-action="Create" method="post" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
             <div class="row g-3">
@@ -52,22 +52,34 @@
                     <span asp-validation-for="SoLuong" class="text-danger small"></span>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label asp-for="ThoiGianBaoHanh" class="form-label fw-bold"></label>
                     <input asp-for="ThoiGianBaoHanh" class="form-control" type="number" min="0" max="120" step="1" placeholder="Số tháng bảo hành" />
                     <span asp-validation-for="ThoiGianBaoHanh" class="text-danger small"></span>
                 </div>
 
-                <div class="col-md-4">
-                    <label asp-for="HinhAnh" class="form-label fw-bold"></label>
-                    <input asp-for="HinhAnh" class="form-control" maxlength="500" placeholder="URL http/https hoặc /images/ten-anh.jpg" />
-                    <span asp-validation-for="HinhAnh" class="text-danger small"></span>
-                </div>
-
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label asp-for="NgayNhap" class="form-label fw-bold"></label>
                     <input asp-for="NgayNhap" class="form-control" type="date" min="2000-01-01" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                     <span asp-validation-for="NgayNhap" class="text-danger small"></span>
+                </div>
+
+                <!-- Chức năng nâng cao: Upload ảnh sản phẩm & xem trước trực tiếp -->
+                <div class="col-md-8">
+                    <label class="form-label fw-bold">Hình ảnh sản phẩm (Tải file từ máy tính hoặc nhập URL)</label>
+                    <div class="input-group mb-2">
+                        <input type="file" name="fileAnh" id="fileAnh" class="form-control" accept="image/*" />
+                        <span class="input-group-text"><i class="bi bi-upload"></i> Chọn ảnh</span>
+                    </div>
+                    <input asp-for="HinhAnh" id="inputHinhAnh" class="form-control" maxlength="500" placeholder="Hoặc dán URL http/https hoặc /images/ten-anh.jpg" />
+                    <span asp-validation-for="HinhAnh" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4 text-center">
+                    <label class="form-label fw-bold small d-block">Xem trước hình ảnh</label>
+                    <div class="border rounded p-1 mx-auto bg-light" style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                        <img id="imagePreview" src="/images/no-image.png" alt="Preview" style="max-width: 100%; max-height: 100%; object-fit: contain;" onerror="this.src='https://placehold.co/100x100?text=Preview';" />
+                    </div>
                 </div>
 
                 <div class="col-12">
@@ -87,7 +99,6 @@
                 </div>
 
                 <div class="col-12 d-flex gap-2 pt-3 border-top">
-                    <!-- Nút submit đã được kích hoạt -->
                     <button type="submit" class="btn btn-primary px-4">💾 Lưu sản phẩm</button>
                     <a asp-action="Index" class="btn btn-outline-secondary">Quay lại danh sách</a>
                 </div>
@@ -98,4 +109,29 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        const fileInput = document.getElementById('fileAnh');
+        const urlInput = document.getElementById('inputHinhAnh');
+        const preview = document.getElementById('imagePreview');
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        preview.src = ev.target.result;
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+
+        if (urlInput) {
+            urlInput.addEventListener('input', function() {
+                if (this.value && this.value.trim().length > 0) {
+                    preview.src = this.value.trim();
+                }
+            });
+        }
+    </script>
 }

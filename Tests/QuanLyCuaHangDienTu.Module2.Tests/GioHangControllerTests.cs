@@ -48,7 +48,8 @@ public class GioHangControllerTests
 
         Assert.Equal("DatHang", result.ActionName);
         Assert.Equal("DonHang", result.ControllerName);
-        Assert.Single(ReadCart(controller.HttpContext.Session));
+        Assert.Empty(ReadCart(controller.HttpContext.Session));
+        Assert.False(string.IsNullOrEmpty(controller.HttpContext.Session.GetString("MUA_NGAY_SESSION")));
     }
 
     [Fact]

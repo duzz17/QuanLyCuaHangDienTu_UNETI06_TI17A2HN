@@ -12,6 +12,9 @@
         <p class="text-muted mb-0">Đặt ngày @Model.NgayDat.ToString("dd/MM/yyyy HH:mm:ss")</p>
     </div>
     <div class="d-flex gap-2">
+        <a asp-action="InHoaDon" asp-route-id="@Model.MaDonHang" target="_blank" class="btn btn-danger">
+            📄 In / Xuất hóa đơn PDF
+        </a>
         <button onclick="window.print()" class="btn btn-outline-secondary">
             🖨️ In hóa đơn
         </button>
@@ -65,11 +68,15 @@
                         case "ChoXacNhan":
                             <span class="badge bg-warning text-dark fs-5 p-2">⏳ Chờ xác nhận</span>
                             break;
+                        case "DaXacNhan":
+                            <span class="badge bg-primary fs-5 p-2">✔️ Đã xác nhận</span>
+                            break;
                         case "DangGiao":
                             <span class="badge bg-info text-dark fs-5 p-2">🚚 Đang giao hàng</span>
                             break;
                         case "DaGiao":
-                            <span class="badge bg-success fs-5 p-2">✅ Giao hàng thành công</span>
+                        case "DaHoanThanh":
+                            <span class="badge bg-success fs-5 p-2">✅ Đã hoàn thành</span>
                             break;
                         case "DaHuy":
                             <span class="badge bg-danger fs-5 p-2">❌ Đã hủy</span>
@@ -88,8 +95,9 @@
                             <input type="hidden" name="id" value="@Model.MaDonHang" />
                             <select name="trangThaiMoi" class="form-select">
                                 <option value="ChoXacNhan" selected="@(Model.TrangThai == "ChoXacNhan" ? "selected" : null)">⏳ Chờ xác nhận</option>
+                                <option value="DaXacNhan" selected="@(Model.TrangThai == "DaXacNhan" ? "selected" : null)">✔️ Đã xác nhận</option>
                                 <option value="DangGiao" selected="@(Model.TrangThai == "DangGiao" ? "selected" : null)">🚚 Đang giao hàng</option>
-                                <option value="DaGiao" selected="@(Model.TrangThai == "DaGiao" ? "selected" : null)">✅ Giao hàng thành công</option>
+                                <option value="DaGiao" selected="@(Model.TrangThai == "DaGiao" || Model.TrangThai == "DaHoanThanh" ? "selected" : null)">✅ Đã hoàn thành</option>
                                 <option value="DaHuy" selected="@(Model.TrangThai == "DaHuy" ? "selected" : null)">❌ Hủy đơn hàng</option>
                             </select>
                             <button type="submit" class="btn btn-primary text-nowrap fw-bold">Cập nhật</button>
@@ -136,7 +144,7 @@
                             <td class="text-center">
                                 @if (!string.IsNullOrWhiteSpace(item.SanPham?.HinhAnh))
                                 {
-                                    <img src="@item.SanPham.HinhAnh" alt="@item.SanPham.TenSanPham" style="max-height: 50px; max-width: 60px; object-fit: cover;" class="rounded border" />
+                                    <img src="@item.SanPham.HinhAnh" alt="@item.SanPham.TenSanPham" style="max-height: 50px; max-width: 60px; object-fit: cover;" class="rounded border" onerror="this.onerror=null;this.src='/images/product-placeholder.svg';" data-product-image />
                                 }
                                 else
                                 {
@@ -151,7 +159,7 @@
                                 <span class="badge bg-info text-dark">@(item.SanPham?.LoaiSanPham?.TenLoai ?? "-")</span>
                             </td>
                             <td class="text-end fw-semibold">@item.DonGia.ToString("N0") ₫</td>
-                            <td class="text-center fw-bold fs-6">x@item.SoLuong</td>
+                            <td class="text-center fw-bold fs-6">@item.SoLuong</td>
                             <td class="text-end text-danger fw-bold fs-6">@thanhTien.ToString("N0") ₫</td>
                         </tr>
                     }

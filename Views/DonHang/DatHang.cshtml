@@ -9,7 +9,8 @@
     <p class="text-muted mb-0">Vui lòng kiểm tra địa chỉ giao hàng và danh sách sản phẩm trước khi hoàn tất</p>
 </div>
 
-<form asp-action="DatHang" method="post">
+<form asp-action="DatHang" asp-route-direct="@(Context.Request.Query["direct"] == "true" ? "true" : "false")" method="post">
+    <input type="hidden" name="direct" value="@(Context.Request.Query["direct"] == "true" ? "true" : "false")" />
     <div class="row g-4">
         <!-- Thông tin giao hàng -->
         <div class="col-lg-7">
@@ -72,11 +73,11 @@
                                 <div class="d-flex align-items-center gap-3">
                                     @if (!string.IsNullOrWhiteSpace(item.HinhAnh))
                                     {
-                                        <img src="@item.HinhAnh" alt="@item.TenSanPham" style="width: 50px; height: 50px; object-fit: cover;" class="rounded border" />
+                                        <img src="@item.HinhAnh" alt="@item.TenSanPham" style="width: 50px; height: 50px; object-fit: cover;" class="rounded border" onerror="this.onerror=null;this.src='/images/product-placeholder.svg';" />
                                     }
                                     <div>
                                         <strong class="text-dark d-block text-truncate" style="max-width: 180px;">@item.TenSanPham</strong>
-                                        <small class="text-muted">SL: x@item.SoLuong | @item.Gia.ToString("N0") ₫</small>
+                                        <small class="text-muted">SL: @item.SoLuong | @item.Gia.ToString("N0") ₫</small>
                                     </div>
                                 </div>
                                 <span class="fw-bold text-danger">@item.ThanhTien.ToString("N0") ₫</span>
@@ -89,6 +90,13 @@
                             <span class="text-muted">Tạm tính:</span>
                             <span class="fw-bold">@Model.GioHang.TongTien.ToString("N0") ₫</span>
                         </div>
+                        @if (Model.GioHang.SoTienGiam > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>Giảm giá Voucher (@Model.GioHang.MaGiamGia):</span>
+                                <span class="fw-bold">-@Model.GioHang.SoTienGiam.ToString("N0") ₫</span>
+                            </div>
+                        }
                         <div class="d-flex justify-content-between mb-3">
                             <span class="text-muted">Phí vận chuyển:</span>
                             <span class="badge bg-success">Miễn phí</span>
@@ -98,7 +106,7 @@
 
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <span class="fs-5 fw-bold text-dark">TỔNG THANH TOÁN:</span>
-                            <span class="fs-4 fw-bold text-danger">@Model.GioHang.TongTien.ToString("N0") ₫</span>
+                            <span class="fs-4 fw-bold text-danger">@Model.GioHang.TongTienSauGiam.ToString("N0") ₫</span>
                         </div>
 
                         <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow">

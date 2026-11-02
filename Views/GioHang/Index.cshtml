@@ -6,7 +6,7 @@
 
 <div class="mb-4">
     <h2 class="text-primary fw-bold mb-1">🛒 Giỏ hàng mua sắm</h2>
-    <p class="text-muted mb-0">Quản lý danh sách các sản phẩm điện tử bạn đã chọn mua</p>
+    <p class="text-muted mb-0">Quản lý danh sách các thiết bị điện tử bạn đã chọn mua</p>
 </div>
 
 @if (!Model.Items.Any())
@@ -29,7 +29,7 @@ else
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-dark">Danh sách sản phẩm (@Model.TongSoLuong)</h5>
+                    <h5 class="mb-0 fw-bold text-dark">Danh sách sản phẩm (<span id="cartTotalItems">@Model.TongSoLuong</span>)</h5>
                     <form asp-action="XoaGioHang" method="post" onsubmit="return confirm('Bạn có chắc muốn làm trống giỏ hàng?');">
                         <button type="submit" class="btn btn-sm btn-outline-danger">🗑️ Làm trống giỏ hàng</button>
                     </form>
@@ -41,7 +41,7 @@ else
                                 <th style="width: 80px;">Hình ảnh</th>
                                 <th>Sản phẩm</th>
                                 <th class="text-end">Đơn giá</th>
-                                <th class="text-center" style="width: 150px;">Số lượng</th>
+                                <th class="text-center" style="width: 160px;">Số lượng</th>
                                 <th class="text-end">Thành tiền</th>
                                 <th class="text-center" style="width: 60px;">Xóa</th>
                             </tr>
@@ -49,7 +49,7 @@ else
                         <tbody>
                             @foreach (var item in Model.Items)
                             {
-                                <tr>
+                                <tr id="row-sp-@item.MaSanPham">
                                     <td class="text-center">
                                         @if (!string.IsNullOrWhiteSpace(item.HinhAnh))
                                         {
@@ -66,13 +66,15 @@ else
                                     </td>
                                     <td class="text-end fw-semibold">@item.Gia.ToString("N0") ₫</td>
                                     <td>
-                                        <form asp-action="CapNhatGioHang" method="post" class="d-flex align-items-center gap-1 justify-content-center">
+                                        <form asp-action="CapNhatGioHang" method="post" class="d-flex align-items-center gap-1 justify-content-center ajax-cart-form" data-product-id="@item.MaSanPham">
+                                            @Html.AntiForgeryToken()
                                             <input type="hidden" name="maSanPham" value="@item.MaSanPham" />
-                                            <input type="number" name="soLuong" value="@item.SoLuong" min="1" max="99" class="form-control form-control-sm text-center" style="width: 65px;" />
-                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Cập nhật số lượng">✓</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary btn-qty-minus" style="width: 28px;">-</button>
+                                            <input type="number" name="soLuong" value="@item.SoLuong" min="1" max="99" class="form-control form-control-sm text-center input-cart-qty" style="width: 50px;" />
+                                            <button type="button" class="btn btn-sm btn-outline-secondary btn-qty-plus" style="width: 28px;">+</button>
                                         </form>
                                     </td>
-                                    <td class="text-end text-danger fw-bold fs-6">
+                                    <td class="text-end text-danger fw-bold fs-6 item-line-total" id="total-sp-@item.MaSanPham">
                                         @item.ThanhTien.ToString("N0") ₫
                                     </td>
                                     <td class="text-center">
@@ -96,21 +98,48 @@ else
             </div>
         </div>
 
-        <!-- Cột Tổng quan giỏ hàng & Thanh toán -->
+        <!-- Cột Tổng quan giỏ hàng & Thanh toán & Voucher -->
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-primary text-white py-3">
                     <h5 class="mb-0 fw-bold">Tóm tắt đơn hàng</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2 text-secondary">
-                        <span>Tổng số sản phẩm:</span>
-                        <strong class="text-dark">@Model.TongSoLuong món</strong>
+                    <!-- Khung Nhập Mã Giảm Giá (Chức năng nâng cao) -->
+                    <div class="mb-3 p-3 bg-light rounded border">
+                        <label class="form-label fw-bold small text-primary mb-2">🎟️ Mã giảm giá / Voucher</label>
+                        <form asp-action="ApDungMaGiamGia" method="post" class="input-group input-group-sm mb-1">
+                            <input type="text" name="maGiamGia" value="@Model.MaGiamGia" class="form-control text-uppercase font-monospace" placeholder="Mã voucher..." required />
+                            <button class="btn btn-primary" type="submit">Áp dụng</button>
+                        </form>
+                        @if (!string.IsNullOrEmpty(Model.MaGiamGia) && Model.SoTienGiam > 0)
+                        {
+                            <div class="d-flex justify-content-between align-items-center mt-2 small text-success bg-white p-2 rounded border">
+                                <span><i class="bi bi-check-circle-fill"></i> Đã dùng: <strong>@Model.MaGiamGia</strong></span>
+                                <form asp-action="XoaMaGiamGia" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" title="Bỏ voucher">✕ Bỏ mã</button>
+                                </form>
+                            </div>
+                        }
+                        <div class="text-muted mt-2" style="font-size: 11px;">
+                            <div>💡 Gợi ý mã có sẵn:</div>
+                            <span class="badge bg-secondary">UNETI10</span> Giảm 10% (tối đa 1tr)<br/>
+                            <span class="badge bg-secondary">GIAM50K</span> Giảm 50.000 ₫<br/>
+                            <span class="badge bg-secondary">DIENTU2026</span> Giảm 5%
+                        </div>
                     </div>
+
                     <div class="d-flex justify-content-between mb-2 text-secondary">
-                        <span>Tạm tính:</span>
-                        <strong class="text-dark">@Model.TongTien.ToString("N0") ₫</strong>
+                        <span>Tạm tính hàng hóa:</span>
+                        <strong class="text-dark" id="cartSubTotal">@Model.TongTien.ToString("N0") ₫</strong>
                     </div>
+                    @if (Model.SoTienGiam > 0)
+                    {
+                        <div class="d-flex justify-content-between mb-2 text-success" id="cartDiscountRow">
+                            <span>Giảm giá voucher:</span>
+                            <strong id="cartDiscount">-@Model.SoTienGiam.ToString("N0") ₫</strong>
+                        </div>
+                    }
                     <div class="d-flex justify-content-between mb-3 text-secondary">
                         <span>Phí vận chuyển:</span>
                         <span class="badge bg-success">Miễn phí</span>
@@ -120,7 +149,7 @@ else
 
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <span class="fs-5 fw-bold text-dark">TỔNG CỘNG:</span>
-                        <span class="fs-4 fw-bold text-danger">@Model.TongTien.ToString("N0") ₫</span>
+                        <span class="fs-4 fw-bold text-danger" id="cartFinalTotal">@Model.TongTienSauGiam.ToString("N0") ₫</span>
                     </div>
 
                     <a asp-controller="DonHang" asp-action="DatHang" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow">
@@ -130,4 +159,89 @@ else
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Xử lý AJAX cập nhật số lượng giỏ hàng tức thời không cần reload trang
+            function updateCartAjax(form, newQty) {
+                const formData = new FormData(form);
+                formData.set('soLuong', newQty);
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const pid = form.getAttribute('data-product-id');
+                        const qtyInput = form.querySelector('.input-cart-qty');
+                        if (qtyInput) qtyInput.value = data.itemQuantity;
+
+                        const lineTotalEl = document.getElementById('total-sp-' + pid);
+                        if (lineTotalEl) {
+                            lineTotalEl.innerText = data.itemTotal.toLocaleString('vi-VN') + ' ₫';
+                        }
+
+                        const subTotalEl = document.getElementById('cartSubTotal');
+                        if (subTotalEl) subTotalEl.innerText = data.subTotal.toLocaleString('vi-VN') + ' ₫';
+
+                        const finalTotalEl = document.getElementById('cartFinalTotal');
+                        if (finalTotalEl) finalTotalEl.innerText = data.finalTotal.toLocaleString('vi-VN') + ' ₫';
+
+                        const discountEl = document.getElementById('cartDiscount');
+                        if (discountEl) discountEl.innerText = '-' + data.discount.toLocaleString('vi-VN') + ' ₫';
+
+                        const cartItemsEl = document.getElementById('cartTotalItems');
+                        if (cartItemsEl) cartItemsEl.innerText = data.cartCount;
+
+                        // Cập nhật badge trên navbar nếu có
+                        const navCartBadge = document.querySelector('.cart-count, #cartCountBadge');
+                        if (navCartBadge) navCartBadge.innerText = data.cartCount;
+                    }
+                })
+                .catch(err => {
+                    console.error('Lỗi cập nhật giỏ hàng:', err);
+                    form.submit(); // Fallback form thông thường
+                });
+            }
+
+            document.querySelectorAll('.btn-qty-minus').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const form = this.closest('.ajax-cart-form');
+                    const input = form.querySelector('.input-cart-qty');
+                    let val = parseInt(input.value) || 1;
+                    if (val > 1) {
+                        updateCartAjax(form, val - 1);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.btn-qty-plus').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const form = this.closest('.ajax-cart-form');
+                    const input = form.querySelector('.input-cart-qty');
+                    let val = parseInt(input.value) || 1;
+                    if (val < 99) {
+                        updateCartAjax(form, val + 1);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.input-cart-qty').forEach(input => {
+                input.addEventListener('change', function () {
+                    const form = this.closest('.ajax-cart-form');
+                    let val = parseInt(this.value) || 1;
+                    if (val < 1) val = 1;
+                    if (val > 99) val = 99;
+                    updateCartAjax(form, val);
+                });
+            });
+        });
+    </script>
 }

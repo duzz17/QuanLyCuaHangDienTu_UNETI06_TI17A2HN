@@ -1,0 +1,226 @@
+@model QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Models.DonHang
+@using System.Globalization
+@{
+    Layout = null;
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hóa đơn #DH@Model.MaDonHang.ToString("D5") - UNETI Store</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #2b2b2b;
+            background-color: #f8f9fa;
+            padding: 20px 0;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .invoice-header {
+            border-bottom: 2px solid #1B365D;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        .store-brand {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1B365D;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .invoice-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #d9534f;
+            text-align: right;
+            margin-bottom: 5px;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .table-invoice th {
+            background-color: #1B365D;
+            color: #ffffff;
+            font-size: 14px;
+        }
+        .table-invoice td {
+            vertical-align: middle;
+            font-size: 14px;
+        }
+        .total-box {
+            background: #f4f7fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #1B365D;
+        }
+        .signature-box {
+            margin-top: 50px;
+            text-align: center;
+        }
+        .signature-title {
+            font-weight: 700;
+            margin-bottom: 70px;
+        }
+        @@media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+            .invoice-container {
+                box-shadow: none;
+                padding: 15px;
+                max-width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container invoice-container">
+        <!-- Nút thao tác (Ẩn khi in/xuất PDF) -->
+        <div class="no-print d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                ← Quay lại
+            </a>
+            <div class="d-flex gap-2">
+                <button onclick="window.print()" class="btn btn-primary">
+                    🖨️ In / Lưu file PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Đầu trang hóa đơn -->
+        <div class="row invoice-header align-items-center">
+            <div class="col-sm-7">
+                <div class="store-brand">🏪 CỬA HÀNG ĐIỆN TỬ UNETI</div>
+                <div class="text-muted small">Địa chỉ: 456 Minh Khai, Hai Bà Trưng, Hà Nội</div>
+                <div class="text-muted small">Điện thoại: (024) 3862 1504 | Email: contact@uneti.edu.vn</div>
+                <div class="text-muted small">Website: https://uneti.edu.vn</div>
+            </div>
+            <div class="col-sm-5 text-sm-end">
+                <div class="invoice-title">HÓA ĐƠN BÁN HÀNG</div>
+                <div class="fw-bold">Mã số: #DH@Model.MaDonHang.ToString("D5")</div>
+                <div class="text-muted small">Ngày đặt: @Model.NgayDat.ToString("dd/MM/yyyy HH:mm")</div>
+                <div class="small mt-1">
+                    Trạng thái: 
+                    <span class="badge bg-success">
+                        @(Model.TrangThai switch {
+                            "ChoXacNhan" => "Chờ xác nhận",
+                            "DaXacNhan" => "Đã xác nhận",
+                            "DangGiao" => "Đang giao",
+                            "DaGiao" => "Đã hoàn thành",
+                            "DaHoanThanh" => "Đã hoàn thành",
+                            "DaHuy" => "Đã hủy",
+                            _ => Model.TrangThai
+                        })
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin khách hàng & giao hàng -->
+        <div class="row mb-4">
+            <div class="col-sm-6">
+                <h6 class="fw-bold text-primary">THÔNG TIN KHÁCH HÀNG</h6>
+                <div><span class="info-label">Họ và tên:</span> @(Model.KhachHang?.HoTen ?? "Khách hàng vãng lai")</div>
+                <div><span class="info-label">Số điện thoại:</span> @(Model.KhachHang?.SoDienThoai ?? "Chưa cập nhật")</div>
+                <div><span class="info-label">Email:</span> @(Model.KhachHang?.Email ?? "Chưa cập nhật")</div>
+            </div>
+            <div class="col-sm-6">
+                <h6 class="fw-bold text-primary">ĐỊA CHỈ NHẬN HÀNG</h6>
+                <div><span class="info-label">Nơi nhận:</span> @Model.DiaChiGiaoHang</div>
+                <div><span class="info-label">Hình thức:</span> Giao hàng tận nơi</div>
+                <div><span class="info-label">Thanh toán:</span> COD (Khi nhận hàng)</div>
+            </div>
+        </div>
+
+        <!-- Bảng danh sách chi tiết sản phẩm -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-invoice">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 50px;">STT</th>
+                        <th>Tên sản phẩm</th>
+                        <th class="text-end" style="width: 140px;">Đơn giá</th>
+                        <th class="text-center" style="width: 90px;">Số lượng</th>
+                        <th class="text-end" style="width: 150px;">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int stt = 1;
+                        decimal subTotal = 0;
+                    }
+                    @foreach (var item in Model.ChiTietDonHangs)
+                    {
+                        var lineTotal = item.DonGia * item.SoLuong;
+                        subTotal += lineTotal;
+                        <tr>
+                            <td class="text-center">@(stt++)</td>
+                            <td>
+                                <strong>@(item.SanPham?.TenSanPham ?? $"Sản phẩm #{item.MaSanPham}")</strong>
+                                @if (item.SanPham?.ThoiGianBaoHanh > 0)
+                                {
+                                    <div class="text-muted small">Bảo hành chính hãng: @item.SanPham.ThoiGianBaoHanh tháng</div>
+                                }
+                            </td>
+                            <td class="text-end">@item.DonGia.ToString("N0", vi) ₫</td>
+                            <td class="text-center">@item.SoLuong</td>
+                            <td class="text-end fw-bold">@lineTotal.ToString("N0", vi) ₫</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tổng kết thanh toán -->
+        <div class="row justify-content-end mb-4">
+            <div class="col-sm-6">
+                <div class="total-box">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Tạm tính hàng hóa:</span>
+                        <span class="fw-bold">@subTotal.ToString("N0", vi) ₫</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Phí vận chuyển:</span>
+                        <span class="text-success fw-bold">Miễn phí (0 ₫)</span>
+                    </div>
+                    <hr class="my-2" />
+                    <div class="d-flex justify-content-between fs-5">
+                        <span class="fw-bold text-primary">TỔNG CỘNG:</span>
+                        <span class="fw-bold text-danger">@Model.TongTien.ToString("N0", vi) ₫</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chữ ký người mua & bán -->
+        <div class="row signature-box">
+            <div class="col-6">
+                <div class="signature-title">KHÁCH HÀNG KÝ NHẬN<br/><small class="text-muted fw-normal">(Ký và ghi rõ họ tên)</small></div>
+            </div>
+            <div class="col-6">
+                <div class="signature-title">NGƯỜI LẬP HÓA ĐƠN<br/><small class="text-muted fw-normal">(Ký, đóng dấu)</small></div>
+            </div>
+        </div>
+
+        <div class="text-center text-muted small mt-5 pt-3 border-top">
+            <em>Cảm ơn Quý khách đã mua sắm tại Cửa hàng Điện tử UNETI! Mọi thắc mắc xin vui lòng liên hệ hotline: 1900 6868.</em>
+        </div>
+    </div>
+</body>
+</html>

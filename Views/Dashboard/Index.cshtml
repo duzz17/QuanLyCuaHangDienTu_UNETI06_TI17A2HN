@@ -88,8 +88,12 @@
 <i>
 </i> Doanh thu</span>
 </div>
+        <!-- Biểu đồ Chart.js trực quan (Chức năng nâng cao) -->
+        <div class="p-2 mb-3 bg-white rounded border" style="position: relative; height: 260px;">
+            <canvas id="revenueChartJs"></canvas>
+        </div>
         @if (Model.Revenue == 0) { <div class="chart-zero-note">Chưa có doanh thu từ đơn đã giao trong khoảng thời gian này.</div> }
-        <div class="revenue-chart" role="img" aria-label="Biểu đồ doanh thu theo ngày, tổng @Model.Revenue.ToString("N0", vi) đồng">
+        <div class="revenue-chart d-none" role="img" aria-label="Biểu đồ doanh thu theo ngày, tổng @Model.Revenue.ToString("N0", vi) đồng">
 <div class="chart-grid-lines">
 <span>@maxRevenue.ToString("N0", vi) ₫</span>
 <span>@((maxRevenue / 2).ToString("N0", vi)) ₫</span>
@@ -142,6 +146,10 @@
 <div class="status-total">
 <strong>@Model.OrderCount</strong>
 <span>tổng đơn hàng</span>
+</div>
+<!-- Biểu đồ tròn trạng thái đơn hàng Chart.js -->
+<div class="my-3 p-2 bg-white rounded border text-center" style="position: relative; height: 180px;">
+    <canvas id="orderStatusChartJs"></canvas>
 </div>
 <div class="status-stacked-bar" aria-hidden="true">@foreach (var status in Model.Statuses) { <span class="@status.CssClass" style="width: @((Model.OrderCount == 0 ? 0 : (decimal)status.Count / Model.OrderCount * 100).ToString("0.##", CultureInfo.InvariantCulture))%">
 </span> }</div>
@@ -259,3 +267,106 @@
 </div>
 </a> }@if (Model.BestSellers.Count == 0) { <p class="best-seller-empty">Sản phẩm bán chạy sẽ xuất hiện khi có đơn hàng được giao thành công.</p> }</div>
 </section>
+
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Dữ liệu biểu đồ từ Model
+            const revLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenuePoints.Select(p => p.Date.ToString("dd/MM"))));
+            const revData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenuePoints.Select(p => p.Amount)));
+            
+            const statusLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Statuses.Select(s => s.Label)));
+            const statusData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Statuses.Select(s => s.Count)));
+
+            // 1. Khởi tạo Biểu đồ Doanh thu (Line / Bar Chart)
+            const ctxRev = document.getElementById('revenueChartJs');
+            if (ctxRev) {
+                new Chart(ctxRev, {
+                    type: 'line',
+                    data: {
+                        labels: revLabels,
+                        datasets: [{
+                            label: 'Doanh thu (VNĐ)',
+                            data: revData,
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.12)',
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: '#0d6efd',
+                            pointRadius: revLabels.length > 15 ? 2 : 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let val = context.parsed.y || 0;
+                                        return 'Doanh thu: ' + val.toLocaleString('vi-VN') + ' ₫';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value >= 1000000) return (value / 1000000).toFixed(1) + ' tr';
+                                        if (value >= 1000) return (value / 1000).toFixed(0) + ' k';
+                                        return value;
+                                    }
+                                },
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Khởi tạo Biểu đồ Tròn Trạng thái đơn hàng (Doughnut Chart)
+            const ctxStatus = document.getElementById('orderStatusChartJs');
+            if (ctxStatus) {
+                new Chart(ctxStatus, {
+                    type: 'doughnut',
+                    data: {
+                        labels: statusLabels,
+                        datasets: [{
+                            data: statusData,
+                            backgroundColor: [
+                                '#ffc107', // Chờ xác nhận (Vàng)
+                                '#6c757d', // Đã xác nhận (Xám)
+                                '#0dcaf0', // Đang giao (Xanh lơ)
+                                '#198754', // Đã giao (Xanh lá)
+                                '#dc3545'  // Đã hủy (Đỏ)
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { boxWidth: 12, font: { size: 11 } }
+                            }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+        });
+    </script>
+}

@@ -1,3 +1,4 @@
+using QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Security;
 // Họ và tên: Nguyễn Xuân Đức
 // Mã sinh viên: 23103100062
 // Nội dung thực hiện: Xử lý đăng nhập bằng EF Core/LINQ, kiểm tra tài khoản, trạng thái khóa, quản lý Session và đăng xuất; hỗ trợ returnUrl để quay lại giỏ hàng sau đăng nhập (Module 1 - Tuần 2: M1-06, M1-07, M1-10 | Tuần 3: Tích hợp returnUrl giỏ hàng)
@@ -48,16 +49,23 @@ public class TaiKhoanController : Controller
             return View(model);
         }
 
-        // M1-06: Đăng nhập bằng EF Core / LINQ; kiểm tra tài khoản hợp lệ
+        // M1-06 & Nâng cao: Đăng nhập bằng EF Core / LINQ; kiểm tra tài khoản và xác thực mật khẩu băm SHA-256
         var taiKhoan = await _context.TaiKhoans
             .Include(tk => tk.KhachHang)
-            .FirstOrDefaultAsync(tk => tk.TenDangNhap == model.TenDangNhap && tk.MatKhau == model.MatKhau);
+            .FirstOrDefaultAsync(tk => tk.TenDangNhap == model.TenDangNhap);
 
-        if (taiKhoan == null)
+        if (taiKhoan == null || !PasswordHelper.VerifyPassword(model.MatKhau, taiKhoan.MatKhau))
         {
             ModelState.AddModelError(string.Empty, "Tên đăng nhập hoặc mật khẩu không chính xác.");
             ViewBag.ReturnUrl = returnUrl;
             return View(model);
+        }
+
+        // Tự động nâng cấp mật khẩu sang dạng băm SHA-256 nếu tài khoản cũ chưa mã hóa
+        if (taiKhoan.MatKhau == model.MatKhau)
+        {
+            taiKhoan.MatKhau = PasswordHelper.HashPassword(model.MatKhau);
+            await _context.SaveChangesAsync();
         }
 
         // M1-06: Kiểm tra trạng thái khóa của tài khoản
@@ -194,7 +202,7 @@ public class TaiKhoanController : Controller
             var taiKhoan = new TaiKhoan
             {
                 TenDangNhap = username,
-                MatKhau = model.MatKhau,
+                MatKhau = PasswordHelper.HashPassword(model.MatKhau),
                 VaiTro = "KhachHang",
                 TrangThai = true,
                 MaKhachHang = khachHang.MaKhachHang

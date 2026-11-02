@@ -12,6 +12,20 @@ namespace QuanLyCuaHangDienTu_UNETI06_TI17A2HN.Controllers;
 public class GioHangController : Controller
 {
     private const string CART_KEY = "GIO_HANG_SESSION";
+    public const string COUPON_KEY = "GIO_HANG_COUPON";
+
+    public static decimal CalculateDiscount(decimal tongTien, string? couponCode)
+    {
+        if (string.IsNullOrWhiteSpace(couponCode) || tongTien <= 0) return 0;
+        couponCode = couponCode.Trim().ToUpperInvariant();
+        return couponCode switch
+        {
+            "UNETI10" => Math.Min(tongTien * 0.10m, 1000000m), // Giảm 10%, tối đa 1.000.000đ
+            "GIAM50K" => tongTien >= 100000m ? 50000m : 0m,   // Giảm 50.000đ cho đơn từ 100.000đ
+            "DIENTU2026" => tongTien * 0.05m,                // Giảm 5%
+            _ => 0m
+        };
+    }
     private readonly ApplicationDbContext _context;
 
     public GioHangController(ApplicationDbContext context)
@@ -44,14 +58,20 @@ public class GioHangController : Controller
         HttpContext.Session.SetString(CART_KEY, json);
     }
 
-    // GET: /GioHang (Trang xem giỏ hàng)
+    // GET: /GioHang (Trang xem giỏ hàng - Tích hợp Giỏ hàng nâng cao)
     [HttpGet]
     public IActionResult Index()
     {
         var cart = GetCartFromSession();
+        var coupon = HttpContext.Session.GetString(COUPON_KEY);
+        var subTotal = cart.Sum(i => i.ThanhTien);
+        var discount = CalculateDiscount(subTotal, coupon);
+
         var model = new GioHangViewModel
         {
-            Items = cart
+            Items = cart,
+            MaGiamGia = coupon,
+            SoTienGiam = discount
         };
         return View(model);
     }
@@ -84,6 +104,24 @@ public class GioHangController : Controller
                 return BadRequest(new { success = false, message = errorMessage });
             TempData["Loi"] = errorMessage;
             return RedirectToAction("Index", "SanPham");
+        }
+
+        // NẾU BẤM "MUA HÀNG" (muaNgay = true):
+        // KHÔNG đưa vào giỏ hàng chính (GIO_HANG_SESSION) trước
+        // Chỉ lưu tạm vào MUA_NGAY_SESSION để chuyển thẳng sang trang Đặt hàng (DatHang).
+        // Chỉ khi người dùng bấm "Hoàn tất đặt hàng", đơn hàng mới chính thức được ghi nhận!
+        if (muaNgay)
+        {
+            var buyNowItem = new CartItemViewModel
+            {
+                MaSanPham = sanPham.MaSanPham,
+                TenSanPham = sanPham.TenSanPham,
+                HinhAnh = sanPham.HinhAnh ?? string.Empty,
+                Gia = sanPham.Gia,
+                SoLuong = Math.Min(soLuong, sanPham.SoLuong)
+            };
+            HttpContext.Session.SetString("MUA_NGAY_SESSION", JsonSerializer.Serialize(buyNowItem));
+            return RedirectToAction("DatHang", "DonHang", new { direct = true });
         }
 
         var cart = GetCartFromSession();
@@ -141,20 +179,27 @@ public class GioHangController : Controller
             : RedirectToAction(nameof(Index));
     }
 
-    // POST: /GioHang/CapNhatGioHang
+    // POST: /GioHang/CapNhatGioHang (Hỗ trợ AJAX cập nhật thời gian thực không tải lại trang)
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CapNhatGioHang(int maSanPham, int soLuong)
     {
+        var ajaxRequest = string.Equals(
+            Request.Headers["X-Requested-With"],
+            "XMLHttpRequest",
+            StringComparison.OrdinalIgnoreCase);
+
         var cart = GetCartFromSession();
         var item = cart.FirstOrDefault(i => i.MaSanPham == maSanPham);
+        string message = "";
 
         if (item != null)
         {
             if (soLuong <= 0)
             {
                 cart.Remove(item);
-                TempData["ThongBao"] = $"Đã xóa sản phẩm '{item.TenSanPham}' khỏi giỏ hàng.";
+                message = $"Đã xóa sản phẩm '{item.TenSanPham}' khỏi giỏ hàng.";
+                TempData["ThongBao"] = message;
             }
             else
             {
@@ -162,17 +207,77 @@ public class GioHangController : Controller
                 if (sanPham != null && soLuong > sanPham.SoLuong)
                 {
                     item.SoLuong = sanPham.SoLuong;
-                    TempData["Loi"] = $"Số lượng vượt quá tồn kho hiện tại ({sanPham.SoLuong}).";
+                    message = $"Số lượng vượt quá tồn kho hiện tại ({sanPham.SoLuong}).";
+                    TempData["Loi"] = message;
                 }
                 else
                 {
                     item.SoLuong = soLuong;
-                    TempData["ThongBao"] = $"Cập nhật số lượng '{item.TenSanPham}' thành công!";
+                    message = $"Cập nhật số lượng '{item.TenSanPham}' thành công!";
+                    TempData["ThongBao"] = message;
                 }
             }
             SaveCartToSession(cart);
         }
 
+        if (ajaxRequest)
+        {
+            var coupon = HttpContext.Session.GetString(COUPON_KEY);
+            var subTotal = cart.Sum(i => i.ThanhTien);
+            var discount = CalculateDiscount(subTotal, coupon);
+            return Json(new
+            {
+                success = true,
+                message,
+                cartCount = cart.Sum(i => i.SoLuong),
+                itemQuantity = item?.SoLuong ?? 0,
+                itemTotal = item?.ThanhTien ?? 0,
+                subTotal = subTotal,
+                discount = discount,
+                finalTotal = Math.Max(0, subTotal - discount)
+            });
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    // POST: /GioHang/ApDungMaGiamGia (Chức năng nâng cao: Áp dụng voucher)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ApDungMaGiamGia(string maGiamGia)
+    {
+        var cart = GetCartFromSession();
+        var subTotal = cart.Sum(i => i.ThanhTien);
+
+        if (string.IsNullOrWhiteSpace(maGiamGia))
+        {
+            TempData["Loi"] = "Vui lòng nhập mã giảm giá.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var code = maGiamGia.Trim().ToUpperInvariant();
+        var discount = CalculateDiscount(subTotal, code);
+
+        if (discount > 0)
+        {
+            HttpContext.Session.SetString(COUPON_KEY, code);
+            TempData["ThongBao"] = $"Áp dụng mã voucher '{code}' thành công! Bạn được giảm {discount:N0} ₫.";
+        }
+        else
+        {
+            TempData["Loi"] = $"Mã giảm giá '{code}' không tồn tại hoặc đơn hàng chưa đủ điều kiện tối thiểu.";
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    // POST: /GioHang/XoaMaGiamGia (Hủy áp dụng mã giảm giá)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult XoaMaGiamGia()
+    {
+        HttpContext.Session.Remove(COUPON_KEY);
+        TempData["ThongBao"] = "Đã hủy áp dụng mã giảm giá.";
         return RedirectToAction(nameof(Index));
     }
 

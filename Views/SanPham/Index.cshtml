@@ -40,7 +40,7 @@
 <h1>@(isAdmin ? "Sản phẩm" : "Tìm thiết bị dành cho bạn")<span class="heading-dot">.</span>
 </h1>
 <p>@(isAdmin ? "Quản lý thông tin, giá bán và tồn kho trong cùng một nơi." : "Lọc theo danh mục, thương hiệu và ngân sách để chọn sản phẩm phù hợp.")</p>
-</div>@if (isAdmin) { <a asp-action="Create" class="btn btn-primary">
+</div>@if (isAdmin) { <a asp-action="XuatExcel" class="btn btn-outline-success"><svg class="icon"><use href="#i-download"/></svg> Xuất Excel</a> <a asp-action="Create" class="btn btn-primary">
 <svg class="icon">
 <use href="#i-plus"/>
 </svg> Thêm sản phẩm</a> }</div>

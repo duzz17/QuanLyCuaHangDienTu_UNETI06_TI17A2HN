@@ -1,4 +1,4 @@
-// Họ và tên: Phạm Văn Cường - MSSV: 23103100094
+// Họ và tên: Phạm Văn Cương - MSSV: 23103100094
 // Nội dung thực hiện: Validation đường dẫn hình ảnh sản phẩm (Module 2)
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
